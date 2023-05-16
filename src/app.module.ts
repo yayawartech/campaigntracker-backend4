@@ -1,11 +1,13 @@
+import { MikroORM } from '@mikro-orm/core';
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module, OnModuleInit } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AdAccountsController } from './ad_accounts/ad_accounts.controller';
+import { AdAccountsService } from './ad_accounts/ad_accounts.service';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { ConfigModule } from '@nestjs/config';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { MikroORM } from '@mikro-orm/core';
 
 @Module({
   imports: [
@@ -14,8 +16,8 @@ import { MikroORM } from '@mikro-orm/core';
     UsersModule,
     AuthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, AdAccountsController],
+  providers: [AppService, AdAccountsService],
 })
 export class AppModule implements OnModuleInit {
   constructor(private readonly orm: MikroORM) {}
