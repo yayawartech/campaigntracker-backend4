@@ -1,7 +1,8 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Ulid } from 'id128';
 
-@Entity({ tableName: 'add_accounts' })
-export class AdaccountsEntity {
+@Entity({ tableName: 'ad_accounts' })
+export class AdAccountsEntity {
   @PrimaryKey({ type: 'string', length: 32 })
   id: string;
 
@@ -9,7 +10,7 @@ export class AdaccountsEntity {
   source: string;
 
   @Property({ type: 'string', length: 30 })
-  account_id: string;
+  accountId: string;
 
   @Property({ type: 'string', length: 255 })
   name: string;
@@ -21,5 +22,15 @@ export class AdaccountsEntity {
   status: string;
 
   @Property({ type: 'datetime' })
-  updated_date: Date;
+  updatedDate: Date;
+
+  constructor(source: string, accountId: string, name: string,timeZone: string, status: string) {
+    this.id = Ulid.generate().toRaw();
+    this.source = source;
+    this.accountId = accountId;
+    this.name = name;
+    this.timeZone = timeZone;
+    this.status = status;
+    this.updatedDate = new Date();
+  }
 }
