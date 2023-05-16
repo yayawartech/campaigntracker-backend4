@@ -10,7 +10,7 @@ export class UsersEntity {
   @Property()
   name: string;
 
-  @Property({ hidden: true })
+  @Property()
   email: string;
 
   @Property({ hidden: true })
