@@ -1,6 +1,6 @@
 import { IsNotEmpty } from "class-validator";
 
-export class CreateAdAccountDto {
+export class AdAccountDto {
 
     @IsNotEmpty()
     readonly accountId: string;

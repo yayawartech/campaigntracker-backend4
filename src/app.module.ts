@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { AdAccountsModule } from './ad_accounts/ad_accounts.module';
 
 @Module({
   imports: [
@@ -15,9 +16,10 @@ import { UsersModule } from './users/users.module';
     MikroOrmModule.forRoot(),
     UsersModule,
     AuthModule,
+    AdAccountsModule,
   ],
-  controllers: [AppController, AdAccountsController],
-  providers: [AppService, AdAccountsService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule implements OnModuleInit {
   constructor(private readonly orm: MikroORM) {}
