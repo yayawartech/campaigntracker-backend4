@@ -12,7 +12,8 @@ export class UsersService {
     private readonly userRepository: EntityRepository<UsersEntity>,
     private readonly em: EntityManager,
   ) {}
-
+  
+  // create user
   async create(dto: CreateUserDto): Promise<void> {
     // check uniqueness of username/email
     const { name, email, password } = dto;
@@ -33,7 +34,43 @@ export class UsersService {
     await this.em.persistAndFlush(user);
   }
 
+  // find user by email
   async findUserByEmail(email: string): Promise<UsersEntity | null> {
     return await this.userRepository.findOne({ email: email });
   }
+
+  // Get All Users
+  async findAllUsers() : Promise<UsersEntity[]> {
+    return await this.userRepository.findAll();
+  }
+
+  // Get User by Id
+  async findUser(id: string): Promise<UsersEntity | null> {
+    return await this.userRepository.findOne({id});
+  }
+
+  // Update User
+  async updateUser(id: string, userData: CreateUserDto) : Promise<UsersEntity> {
+
+    const entityToUpdate = await this.userRepository.findOne({ id });
+    if (!entityToUpdate) {
+        throw new HttpException(
+            {
+              message: 'User Account not found',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+      }
+
+      Object.assign(entityToUpdate, userData); // Update all properties at once
+      await this.em.flush()
+      return entityToUpdate;
+}
+
+  // Delete User
+  async deleteUser(id: string) : Promise<void> {
+    const entityToDelete = await this.em.findOne(UsersEntity, { id });
+
+    return await this.em.removeAndFlush(entityToDelete);
+}
 }
