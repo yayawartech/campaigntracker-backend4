@@ -1,18 +1,16 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty } from 'class-validator';
 
 export class AdAccountDto {
+  @IsNotEmpty()
+  readonly accountId: string;
 
-    @IsNotEmpty()
-    readonly accountId: string;
+  readonly source: string;
 
-    readonly source: string;
+  @IsNotEmpty()
+  readonly name: string;
 
-    @IsNotEmpty()
-    readonly name: string;
+  @IsNotEmpty()
+  readonly timeZone: string;
 
-    @IsNotEmpty()
-    readonly timeZone: string;
-
-    @IsNotEmpty()
-    readonly status: string;
+  readonly status: string;
 }

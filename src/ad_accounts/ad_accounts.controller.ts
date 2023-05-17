@@ -1,36 +1,44 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { AdAccountsService } from './ad_accounts.service';
 import { AdAccountDto } from './dto/create-adaccounts.dto';
 
-@Controller('adaccounts')
+@Controller('ad-accounts')
 export class AdAccountsController {
-    constructor( 
-        private readonly adAccountsService: AdAccountsService
-    ){}
-    
-    @Post()
-    async create(@Body() adAccountData: AdAccountDto){
-        return this.adAccountsService.create(adAccountData);
-    }
+  constructor(private readonly adAccountsService: AdAccountsService) {}
 
-    @Get()
-    async findAllAdAccounts(){
-        return this.adAccountsService.findAllAdAccounts();
-    }
+  @Post()
+  async create(@Body() adAccountData: AdAccountDto) {
+    return this.adAccountsService.create(adAccountData);
+  }
 
-    @Get(':accountId')
-    async findAdAccount(@Param('accountId') accountId: string){
-        return this.adAccountsService.findAdAccount(accountId);
-    }
+  @Get()
+  async findAllAdAccounts() {
+    return this.adAccountsService.findAllAdAccounts();
+  }
 
-    @Delete(':accountId')
-    async deleteAdAccount(@Param('accountId') accountId: string){
-        return this.adAccountsService.deleteAdAccount(accountId);
-    }
+  @Get(':accountId')
+  async findAdAccount(@Param('accountId') accountId: string) {
+    return this.adAccountsService.findAdAccount(accountId);
+  }
 
-    @Put(':accountId')
-    async updateAdAccount(@Body() adAccountData: AdAccountDto, @Param('accountId') accountId: string){
-        return this.adAccountsService.updateAdAccount(accountId,adAccountData);
-    }
+  @Delete(':accountId')
+  async deleteAdAccount(@Param('accountId') accountId: string) {
+    return this.adAccountsService.deleteAdAccount(accountId);
+  }
 
+  @Put(':accountId')
+  async updateAdAccount(
+    @Body() adAccountData: AdAccountDto,
+    @Param('accountId') accountId: string,
+  ) {
+    return this.adAccountsService.updateAdAccount(accountId, adAccountData);
+  }
 }
