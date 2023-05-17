@@ -38,3 +38,5 @@ lerna-debug.log*
 .env
 src/mikro-orm.config.ts
 src/config.ts
+
+yarn.lock
