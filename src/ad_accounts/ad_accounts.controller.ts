@@ -21,7 +21,7 @@ export class AdAccountsController {
   async create(@Body() adAccountData: AdAccountDto) {
     return this.adAccountsService.create(adAccountData);
   }
-
+  //
   @Get()
   async findAllAdAccounts() {
     return this.adAccountsService.findAllAdAccounts();
