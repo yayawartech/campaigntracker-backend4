@@ -25,6 +25,6 @@ export class AppModule implements OnModuleInit {
   constructor(private readonly orm: MikroORM) {}
 
   async onModuleInit(): Promise<void> {
-    await this.orm.getMigrator().up();
+    // await this.orm.getMigrator().up();
   }
 }
