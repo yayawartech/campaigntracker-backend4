@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ExternalAPIService } from './external_api/external_api.service';
+import { ExternalAPIService } from './external/dm-reporting/external_api.service';
 
 @Injectable()
 export class TrackerCronJob {
