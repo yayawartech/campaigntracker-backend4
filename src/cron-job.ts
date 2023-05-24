@@ -9,7 +9,7 @@ export class TrackerCronJob {
     private readonly logger: Logger,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async handleCron(): Promise<any> {
     this.logger.log("Running cron job...");
     const startDate = '2023-05-21T00:00:00';
