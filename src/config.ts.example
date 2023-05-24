@@ -1,1 +1,4 @@
-export const JWT_SECRET_TOKEN = '';
+export const JWT_SECRET_TOKEN = 'something';
+export const EXTERNAL_API_URL = 'https://api.dm-reporting.com/api_gp?aff=hudson%20interactive'
+export const EXTERNAL_ACCESS_KEY = '';
+export const EXTERNAL_ACCESS_TOKEN = '';
