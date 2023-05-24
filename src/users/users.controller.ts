@@ -12,7 +12,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
 
-@UseGuards(AuthGuard('jwt'))
+//@UseGuards(AuthGuard('jwt'))
+//TODO Not working as expected
 @Controller('users')
 export class UsersController {
   constructor(private readonly userService: UsersService) {}

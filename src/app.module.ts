@@ -8,7 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AdAccountsModule } from './ad_accounts/ad_accounts.module';
 import { TrackerCronJob } from './cron-job';
-import { ExternalAPIModule } from './external_api/external_api.module';
+import { ExternalAPIModule } from './external/dm-reporting/external_api.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PaginationModule } from './pagination/pagination.module';
 
