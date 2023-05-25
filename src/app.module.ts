@@ -11,6 +11,7 @@ import { TrackerCronJob } from './cron-job';
 import { DMReportingModule } from './external/dm-reporting/dm_reporting.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PaginationModule } from './pagination/pagination.module';
+import { AdSetsModule } from './facebook/ad-sets/ad_sets.module';
 
 @Module({
   imports: [
@@ -22,13 +23,13 @@ import { PaginationModule } from './pagination/pagination.module';
     DMReportingModule,
     AdAccountsModule,
     PaginationModule,
+    AdSetsModule,
   ],
   controllers: [AppController],
-  providers: [AppService,TrackerCronJob,Logger],
+  providers: [AppService, TrackerCronJob, Logger],
 })
 export class AppModule implements OnModuleInit {
   constructor(private readonly orm: MikroORM) {}
 
-  async onModuleInit(): Promise<void> {
-  }
+  async onModuleInit(): Promise<void> {}
 }
