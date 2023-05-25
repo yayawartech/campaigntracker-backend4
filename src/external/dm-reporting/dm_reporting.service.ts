@@ -1,19 +1,19 @@
 import { EntityManager } from '@mikro-orm/core';
 import { EntityRepository } from '@mikro-orm/mysql';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { ExternalAPIEntity } from './external_api.entity';
+import { DMReportingEntity } from './dm_reporting.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import { EXTERNAL_ACCESS_KEY, EXTERNAL_ACCESS_TOKEN, EXTERNAL_API_URL } from 'src/config';
 import { PaginationService } from 'src/pagination/pagination.service';
 
 @Injectable()
-export class ExternalAPIService {
+export class DMReportingService {
   constructor(
-    @InjectRepository(ExternalAPIEntity)
-    private readonly externalAPIRepostitory: EntityRepository<ExternalAPIEntity>,
+    @InjectRepository(DMReportingEntity)
+    private readonly externalAPIRepostitory: EntityRepository<DMReportingEntity>,
     private readonly em: EntityManager,
-    private readonly paginationService: PaginationService<ExternalAPIEntity>,
+    private readonly paginationService: PaginationService<DMReportingEntity>,
     private readonly logger: Logger,
 
   ) {}
@@ -27,7 +27,7 @@ export class ExternalAPIService {
       const response: AxiosResponse = await axios.get(url);
       response.data.map(async (record) => {
         
-        const campaign_data = new ExternalAPIEntity(
+        const campaign_data = new DMReportingEntity(
           record.Advertiser,
           record.Domain,
           record.Manager,
@@ -57,7 +57,7 @@ export class ExternalAPIService {
     }
   }
 
-  async findAll(page: number = 1, pageSize: number = 10): Promise<PaginationResponse<ExternalAPIEntity>> {
+  async findAll(page: number = 1, pageSize: number = 10): Promise<PaginationResponse<DMReportingEntity>> {
     const query = this.externalAPIRepostitory.createQueryBuilder();
 
     query.offset((page - 1) * pageSize).limit(pageSize);

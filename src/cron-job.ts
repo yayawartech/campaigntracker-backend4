@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ExternalAPIService } from './external/dm-reporting/external_api.service';
+import { DMReportingService } from './external/dm-reporting/dm_reporting.service';
 
 @Injectable()
 export class TrackerCronJob {
   constructor(
-    private readonly extAPIService: ExternalAPIService,
+    private readonly extAPIService: DMReportingService,
     private readonly logger: Logger,
   ) {}
 
