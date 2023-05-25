@@ -1,9 +1,8 @@
-import crypto from 'crypto';
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 import { Ulid } from 'id128';
 
 @Entity({ tableName: 'external_api' })
-export class ExternalAPIEntity {
+export class DMReportingEntity {
   @PrimaryKey({ type: 'string', length: 32 })
   id: string;
 

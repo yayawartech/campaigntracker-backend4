@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExternalAPIService } from './external_api.service';
+import { DMReportingService } from './dm_reporting.service';
 
 describe('ExternalAPIService', () => {
-  let service: ExternalAPIService;
+  let service: DMReportingService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ExternalAPIService],
+      providers: [DMReportingService],
     }).compile();
 
-    service = module.get<ExternalAPIService>(ExternalAPIService);
+    service = module.get<DMReportingService>(DMReportingService);
   });
 
   it('should be defined', () => {
