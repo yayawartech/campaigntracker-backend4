@@ -52,20 +52,20 @@ export class AdAccountsService {
   }
 
   // READ (GET) - find Ad Accounts by accountID
-  // Parameters: accountID: The accountID of the Ad Accounts
-  async findAdAccount(accountId: string): Promise<AdAccountsEntity | null> {
-    return await this.adAccountsRepository.findOne({ accountId });
+  // Parameters: id: The accountID of the Ad Accounts
+  async findAdAccount(id: string): Promise<AdAccountsEntity | null> {
+    return await this.adAccountsRepository.findOne({ id });
   }
 
   // DELETE (DELETE) - Delete Ad Accounts by accountId
   // Parameters:
-  // - accountId: The ID of the Ad Accounts to delete
+  // - id: The ID of the Ad Accounts to delete
 
   async deleteAdAccount(
-    accountId: string,
+    id: string,
   ): Promise<{ message: string; data: AdAccountsEntity }> {
     const entityToDelete = await this.em.findOne(AdAccountsEntity, {
-      accountId: accountId,
+      id: id,
     });
 
     await this.em.removeAndFlush(entityToDelete);
@@ -77,15 +77,15 @@ export class AdAccountsService {
 
   // UPDATE (PUT) - Update Adaccounts details by accountsId
   // Parameters:
-  // - accountId: The ID of the AdAcounts to update
+  // - id: The ID of the AdAcounts to update
   // - updatedAdaccountData: An object containing the updated user data
 
   async updateAdAccount(
-    accountId: string,
+    id: string,
     adAccountData: AdAccountDto,
   ): Promise<AdAccountsEntity> {
     const entityToUpdate = await this.adAccountsRepository.findOne({
-      id: accountId,
+      id: id,
     });
     if (!entityToUpdate) {
       throw new HttpException(
