@@ -6,11 +6,10 @@ import {
   Param,
   Post,
   Put,
-  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AdAccountsService } from './ad_accounts.service';
 import { AdAccountDto } from './dto/create-adaccounts.dto';
-import { AuthGuard } from '@nestjs/passport';
 
 @Controller('ad-accounts')
 export class AdAccountsController {
@@ -22,8 +21,12 @@ export class AdAccountsController {
   }
 
   @Get()
-  async findAllAdAccounts() {
-    return this.adAccountsService.findAllAdAccounts();
+  async getAllAdaccounts(
+    @Query('page') page: number,
+    @Query('pageSize') pageSize: number,
+  ) {
+    const resp = await this.adAccountsService.findAllAdAccounts(page, pageSize);
+    return resp;
   }
 
   @Get(':id')

@@ -1,3 +1,4 @@
+import { PaginationService } from 'src/pagination/pagination.service';
 import { EntityManager } from '@mikro-orm/core';
 import { EntityRepository } from '@mikro-orm/mysql';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -10,6 +11,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UsersEntity)
     private readonly userRepository: EntityRepository<UsersEntity>,
+    private readonly paginationService:PaginationService<UsersEntity>, 
     private readonly em: EntityManager,
   ) {}
 
@@ -53,8 +55,11 @@ export class UsersService {
 
   // Get All Users
 
-  async findAllUsers(): Promise<UsersEntity[]> {
-    return await this.userRepository.findAll();
+  async findAllUsers(page: number = 1,pageSize:number = 10): Promise<PaginationResponse<UsersEntity>> {
+    const query = this.userRepository.createQueryBuilder();
+    query.offset((page - 1) * pageSize).limit(pageSize);
+    const [items,totalItems] = await query.getResultAndCount();
+    return this.paginationService.getPaginationData(page,pageSize,items,totalItems)
   }
 
   // READ (GET) - Get user details by ID

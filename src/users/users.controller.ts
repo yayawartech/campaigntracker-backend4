@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,8 +25,9 @@ export class UsersController {
   }
 
   @Get()
-  async findUsers() {
-    return this.userService.findAllUsers();
+  async findUsers(@Query('page') page: number,@Query('pageSize') pageSize: number) {
+    const resp = await this.userService.findAllUsers(page,pageSize)
+    return resp
   }
 
   @Get(':id')
