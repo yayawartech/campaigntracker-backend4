@@ -26,21 +26,21 @@ export class AdAccountsController {
     return this.adAccountsService.findAllAdAccounts();
   }
 
-  @Get(':accountId')
-  async findAdAccount(@Param('accountId') accountId: string) {
-    return this.adAccountsService.findAdAccount(accountId);
+  @Get(':id')
+  async findAdAccount(@Param('id') id: string) {
+    return this.adAccountsService.findAdAccount(id);
   }
 
-  @Delete(':accountId')
-  async deleteAdAccount(@Param('accountId') accountId: string) {
-    return this.adAccountsService.deleteAdAccount(accountId);
+  @Delete(':id')
+  async deleteAdAccount(@Param('id') id: string) {
+    return this.adAccountsService.deleteAdAccount(id);
   }
 
-  @Put(':accountId')
+  @Put(':id')
   async updateAdAccount(
     @Body() adAccountData: AdAccountDto,
-    @Param('accountId') accountId: string,
+    @Param('id') id: string,
   ) {
-    return this.adAccountsService.updateAdAccount(accountId, adAccountData);
+    return this.adAccountsService.updateAdAccount(id, adAccountData);
   }
 }

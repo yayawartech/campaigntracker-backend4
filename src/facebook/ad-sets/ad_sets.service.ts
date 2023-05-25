@@ -13,8 +13,10 @@ export class AdSetsService {
     @InjectRepository(AdSetsEntity)
     private readonly adSetsRepostitory: EntityRepository<AdSetsEntity>,
     private readonly em: EntityManager,
+    
     @Inject(AdAccountsService)
     private readonly adAccountService: AdAccountsService,
+    
     private readonly logger: Logger,
     private readonly paginationService: PaginationService<AdSetsEntity>,
   ) {}
