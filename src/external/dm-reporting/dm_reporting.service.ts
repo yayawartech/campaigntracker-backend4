@@ -4,7 +4,11 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { DMReportingEntity } from './dm_reporting.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
-import { EXTERNAL_ACCESS_KEY, EXTERNAL_ACCESS_TOKEN, EXTERNAL_API_URL } from 'src/config';
+import {
+  DM_REPORTING_ACCESS_KEY,
+  DM_REPORTING_ACCESS_TOKEN,
+  DM_REPORTING_URL,
+} from 'src/config';
 import { PaginationService } from 'src/pagination/pagination.service';
 
 @Injectable()
@@ -15,18 +19,24 @@ export class DMReportingService {
     private readonly em: EntityManager,
     private readonly paginationService: PaginationService<DMReportingEntity>,
     private readonly logger: Logger,
-
   ) {}
 
   // Service Commands files
   async fetchExternalApiData(startDate: string, endDate: string): Promise<any> {
-    
-    const url = EXTERNAL_API_URL + '&key='+EXTERNAL_ACCESS_KEY+'&token='+EXTERNAL_ACCESS_TOKEN+'&startDate='+startDate+'&endDate='+endDate;    
-    
+    const url =
+      DM_REPORTING_URL +
+      '&key=' +
+      DM_REPORTING_ACCESS_KEY +
+      '&token=' +
+      DM_REPORTING_ACCESS_TOKEN +
+      '&startDate=' +
+      startDate +
+      '&endDate=' +
+      endDate;
+
     try {
       const response: AxiosResponse = await axios.get(url);
       response.data.map(async (record) => {
-        
         const campaign_data = new DMReportingEntity(
           record.Advertiser,
           record.Domain,
@@ -44,7 +54,7 @@ export class DMReportingService {
           record.GP,
           record.Searches,
           record.Clicks,
-          record.TQ
+          record.TQ,
         );
         await this.em.persistAndFlush(campaign_data);
       });
@@ -57,14 +67,21 @@ export class DMReportingService {
     }
   }
 
-  async findAll(page: number = 1, pageSize: number = 10): Promise<PaginationResponse<DMReportingEntity>> {
+  async findAll(
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<PaginationResponse<DMReportingEntity>> {
     const query = this.externalAPIRepostitory.createQueryBuilder();
 
     query.offset((page - 1) * pageSize).limit(pageSize);
 
     const [items, totalItems] = await query.getResultAndCount();
-    
-    return this.paginationService.getPaginationData(page,pageSize,items,totalItems);
-    
+
+    return this.paginationService.getPaginationData(
+      page,
+      pageSize,
+      items,
+      totalItems,
+    );
   }
 }
