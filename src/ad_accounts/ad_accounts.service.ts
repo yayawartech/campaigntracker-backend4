@@ -95,7 +95,7 @@ export class AdAccountsService {
   async updateAdAccount(
     id: string,
     adAccountData: AdAccountDto,
-  ): Promise<AdAccountsEntity> {
+  ): Promise<{message: string; data: AdAccountsEntity }> {
     const entityToUpdate = await this.adAccountsRepository.findOne({
       id: id,
     });
@@ -110,6 +110,9 @@ export class AdAccountsService {
     Object.assign(entityToUpdate, adAccountData); // Update all properties at once
     entityToUpdate.updatedDate = new Date();
     await this.em.flush();
-    return entityToUpdate;
+    return {
+      message: 'Ad account deleted successfully',
+      data: entityToUpdate,
+    };
   }
 }
