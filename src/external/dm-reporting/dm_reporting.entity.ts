@@ -82,11 +82,15 @@ export class DMReportingEntity {
     this.manager = manager;
     this.buyer = buyer;
 
+    // Merging date and hour
+    const formattedHour = hour.toString().padStart(2,'0');
+    const replacedDate = date.replace('T00', 'T' + formattedHour + '');
+
     // The date in the response is in yyyy:mm:ddT{timestamp} format hence conversion
     // to UTC format is not required.
-    this.date = date;
+    this.date = replacedDate;
     this.hour = hour;
-
+    
     this.campaign = campaign;
     this.adset = adset;
     this.adsetid = adset_id;
