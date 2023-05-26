@@ -35,8 +35,10 @@ export class DMReportingService {
       endDate;
 
     try {
+      this.logger.log("Started cron job for DM Reporting API");
       const response: AxiosResponse = await axios.get(url);
-      response.data.map(async (record) => {
+      
+      response.data.forEach(record => {
         const campaign_data = new DMReportingEntity(
           record.Advertiser,
           record.Domain,
@@ -56,14 +58,16 @@ export class DMReportingService {
           record.Clicks,
           record.TQ,
         );
-        await this.em.persistAndFlush(campaign_data);
+        this.em.persist(campaign_data);
       });
-      this.logger.warn(`Fetched ${response.data.length} entries succesfully`);
+      await this.em.flush();
+      this.logger.log("Completed cron job for DM Reporting API");
+      this.logger.log(`Fetched ${response.data.length} entries succesfully`);
       const data = response.data;
       return data;
     } catch (error) {
-      // Handle error if the API request fails
-      throw new Error('Failed to fetch data from API');
+      this.logger.debug(error)
+      this.logger.error('Failed to fetch data from DM Reporting API');
     }
   }
 

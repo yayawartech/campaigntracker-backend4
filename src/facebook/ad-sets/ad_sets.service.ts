@@ -33,26 +33,32 @@ export class AdSetsService {
           accountId +
           '/adsets?fields=status,name,daily_budget,created_time,start_time&access_token=' +
           FACEBOOK_ACCESS_TOKEN;
-          this.logger.log(url);
         try {
+          this.logger.log("Started cron job for Facebook AdSets API");
           const response: AxiosResponse = await axios.get(url);
-          response.data.data.map(async (d) => {
-            const faceBookData = new AdSetsEntity(
-              d.id,
-              d.status,
-              d.name,
-              d.daily_budget,
-              d.created_time,
-              d.start_time,
-              accountId,
+          if (response){            
+            response.data.data.forEach(record => {
+              const faceBookData = new AdSetsEntity(
+                record.id,
+                record.status,
+                record.name,
+                record.daily_budget,
+                record.created_time,
+                record.start_time,
+                accountId,
+              );
+              this.em.persist(faceBookData);
+            });
+            await this.em.flush()
+  
+            this.logger.log(
+              `Fetched ${response.data.data.length} facebook entries succesfully`,
             );
-            await this.em.persistAndFlush(faceBookData);
-          });
-          this.logger.warn(
-            `Fetched ${response.data.length} facebook entries succesfully`,
-          );
+            this.logger.log("Completed cron job for Facebook AdSets API");
+          }
+          
         } catch (error) {
-          this.logger.error(error)
+          this.logger.debug(error)
           this.logger.error('Failed to fetch data from Facebook API');
         }
       });

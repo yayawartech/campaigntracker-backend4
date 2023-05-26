@@ -12,16 +12,18 @@ export class TrackerCronJob {
     private readonly logger: Logger,
   ) {}
 
-  @Cron(CronExpression.EVERY_12_HOURS)
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async handleCron(): Promise<any> {
-    this.logger.log('Running cron job...');
+    
     const startDate = '2023-05-21T00:00:00';
     const endDate = '2023-05-21T00:00:00';
-    const data = await this.extAPIService.fetchExternalApiData(
+    this.extAPIService.fetchExternalApiData(
       startDate,
       endDate,
     );
+
+    
     this.adSetsService.fetchAdSetsDataFromApi();
-    this.logger.log('Completed cron job...');
+    
   }
 }
