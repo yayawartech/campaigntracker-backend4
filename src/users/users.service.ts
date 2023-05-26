@@ -76,7 +76,7 @@ export class UsersService {
   // - userId: The ID of the user to update
   // - updatedUserData: An object containing the updated user data
 
-  async updateUser(id: string, userData: CreateUserDto): Promise<UsersEntity> {
+  async updateUser(id: string, userData: CreateUserDto): Promise<{message: string; data: UsersEntity}> {
     const entityToUpdate = await this.userRepository.findOne({ id });
     if (!entityToUpdate) {
       throw new HttpException(
@@ -90,7 +90,10 @@ export class UsersService {
 
     Object.assign(entityToUpdate, userData);
     await this.em.flush();
-    return entityToUpdate;
+    return {
+      message: 'User updated successfully',
+      data: entityToUpdate,
+    };
   }
 
   // DELETE (DELETE) - Delete user by ID
