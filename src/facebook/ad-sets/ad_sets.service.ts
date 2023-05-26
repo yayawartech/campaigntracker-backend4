@@ -21,7 +21,7 @@ export class AdSetsService {
     private readonly paginationService: PaginationService<AdSetsEntity>,
   ) {}
   async fetchAdSetsDataFromApi(): Promise<any> {
-    const adAccountData = await this.adAccountService.findAllAdAccounts();
+    const adAccountData = await this.adAccountService.findAllAccounts();
     let accountId = null;
 
     if (adAccountData) {
@@ -34,8 +34,8 @@ export class AdSetsService {
           '/adsets?fields=status,name,daily_budget,created_time,start_time&access_token=' +
           FACEBOOK_ACCESS_TOKEN;
         try {
-          const { data }: AxiosResponse = await axios.get(url);
-          data.data.map(async (d: AdSetsEntity) => {
+          const response: AxiosResponse = await axios.get(url);
+          response.data.map(async (d) => {
             const faceBookData = new AdSetsEntity(
               d.id,
               d.status,
@@ -48,7 +48,7 @@ export class AdSetsService {
             await this.em.persistAndFlush(faceBookData);
           });
           this.logger.warn(
-            `Fetched ${data.data.length} facebook entries succesfully`,
+            `Fetched ${response.data.length} facebook entries succesfully`,
           );
         } catch (error) {
           throw new Error('Failed to fetch data from API');
