@@ -1,14 +1,16 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/mysql';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Query } from '@nestjs/common';
 import { AdAccountsEntity } from './ad_accounts.entity';
 import { AdAccountDto } from './dto/create-adaccounts.dto';
+import { PaginationService } from 'src/pagination/pagination.service';
 
 @Injectable()
 export class AdAccountsService {
   constructor(
     @InjectRepository(AdAccountsEntity)
     private readonly adAccountsRepository: EntityRepository<AdAccountsEntity>,
+    private readonly paginationService: PaginationService<AdAccountsEntity>,
     private readonly em: EntityManager,
   ) {}
   // CREATE (POST) - Create a new Ad Accounts
@@ -47,9 +49,19 @@ export class AdAccountsService {
   }
 
   // Retrieve all AdAccounts
-  async findAllAdAccounts(): Promise<AdAccountsEntity[]> {
+  async findAllAdAccounts(page: number = 1, pageSize: number = 10): Promise<PaginationResponse<AdAccountsEntity>> {
+    const query = this.adAccountsRepository.createQueryBuilder();
+    query.offset((page - 1) * pageSize).limit(pageSize);
+    const [items,totalItems]  = await query.getResultAndCount();
+    return this.paginationService.getPaginationData(page,pageSize,items,totalItems)
+  }
+
+  async findAllAccounts(): Promise<AdAccountsEntity[]> {
     return await this.adAccountsRepository.findAll();
   }
+
+
+  
 
   // READ (GET) - find Ad Accounts by accountID
   // Parameters: id: The accountID of the Ad Accounts
@@ -83,7 +95,7 @@ export class AdAccountsService {
   async updateAdAccount(
     id: string,
     adAccountData: AdAccountDto,
-  ): Promise<AdAccountsEntity> {
+  ): Promise<{message: string; data: AdAccountsEntity }> {
     const entityToUpdate = await this.adAccountsRepository.findOne({
       id: id,
     });
@@ -98,6 +110,9 @@ export class AdAccountsService {
     Object.assign(entityToUpdate, adAccountData); // Update all properties at once
     entityToUpdate.updatedDate = new Date();
     await this.em.flush();
-    return entityToUpdate;
+    return {
+      message: 'Ad account deleted successfully',
+      data: entityToUpdate,
+    };
   }
 }
