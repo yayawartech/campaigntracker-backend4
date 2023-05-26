@@ -33,9 +33,10 @@ export class AdSetsService {
           accountId +
           '/adsets?fields=status,name,daily_budget,created_time,start_time&access_token=' +
           FACEBOOK_ACCESS_TOKEN;
+          this.logger.log(url);
         try {
           const response: AxiosResponse = await axios.get(url);
-          response.data.map(async (d) => {
+          response.data.data.map(async (d) => {
             const faceBookData = new AdSetsEntity(
               d.id,
               d.status,
@@ -51,11 +52,11 @@ export class AdSetsService {
             `Fetched ${response.data.length} facebook entries succesfully`,
           );
         } catch (error) {
-          throw new Error('Failed to fetch data from API');
+          this.logger.error(error)
+          this.logger.error('Failed to fetch data from Facebook API');
         }
       });
     }
-    return [1, 2, 3];
   }
   async getAdSetsData(
     page: number = 1,
