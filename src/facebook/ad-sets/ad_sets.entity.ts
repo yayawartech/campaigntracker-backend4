@@ -50,5 +50,7 @@ export class AdSetsEntity {
     this.created_time = created_time;
     this.start_time = start_time;
     this.adaccount_id = adaccount_id;
+    this.created_at = new Date();
+    this.updated_at = new Date();
   }
 }
