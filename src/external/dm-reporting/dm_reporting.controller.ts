@@ -9,9 +9,9 @@ export class DMReportingController {
 
   // Controller methods here
   @Get()
-  async fetchExternalApiData(@Query('page') page: number, @Query('pageSize') pageSize: number): Promise<PaginationResponse<DMReportingEntity>> {
+  async fetchExternalApiData(@Query('page') page: number, @Query('pageSize') pageSize: number, @Query('fromDate') fromDate: string, @Query('toDate') toDate: string): Promise<PaginationResponse<DMReportingEntity>> {
 
-    const resp = await this.extAPIService.findAll(page, pageSize);
+    const resp = await this.extAPIService.findAll(page, pageSize,fromDate,toDate);
     return resp
   }
 }
