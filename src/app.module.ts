@@ -1,30 +1,35 @@
 import { MikroORM } from '@mikro-orm/core';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AdAccountsController } from './ad_accounts/ad_accounts.controller';
-import { AdAccountsService } from './ad_accounts/ad_accounts.service';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AdAccountsModule } from './ad_accounts/ad_accounts.module';
+import { TrackerCronJob } from './cron-job';
+import { DMReportingModule } from './external/dm-reporting/dm_reporting.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { PaginationModule } from './pagination/pagination.module';
+import { AdSetsModule } from './facebook/ad-sets/ad_sets.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     MikroOrmModule.forRoot(),
+    ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,
+    DMReportingModule,
     AdAccountsModule,
+    PaginationModule,
+    AdSetsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, TrackerCronJob, Logger],
 })
 export class AppModule implements OnModuleInit {
   constructor(private readonly orm: MikroORM) {}
 
-  async onModuleInit(): Promise<void> {
-    // await this.orm.getMigrator().up();
-  }
+  async onModuleInit(): Promise<void> {}
 }
