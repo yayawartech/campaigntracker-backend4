@@ -11,4 +11,5 @@ export default defineConfig({
   //TODO find better way to do this. Since this deprecated
   type: 'mysql',
   extensions: [Migrator],
+  allowGlobalContext: true,
 });
