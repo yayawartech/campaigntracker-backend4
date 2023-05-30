@@ -1,7 +1,8 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { DateTimeType, Entity, PrimaryKey, Property } from '@mikro-orm/core';
 import { Ulid } from 'id128';
+import { Timestamp } from 'rxjs';
 
-@Entity({ tableName: 'external_api' })
+@Entity({ tableName: 'dm_reporting_history' })
 export class DMReportingEntity {
   @PrimaryKey({ type: 'string', length: 32 })
   id: string;
@@ -18,8 +19,8 @@ export class DMReportingEntity {
   @Property({ nullable: true })
   buyer: string;
 
-  @Property({ nullable: true })
-  date: string;
+  @Property({ type: 'date', nullable: true })
+  date: Date;
 
   @Property({ nullable: true })
   hour: number;
@@ -62,7 +63,7 @@ export class DMReportingEntity {
     domain: string,
     manager: string,
     buyer: string,
-    date: string,
+    date: Date,
     hour: number,
     campaign: string,
     adset: string,
@@ -81,16 +82,19 @@ export class DMReportingEntity {
     this.domain = domain;
     this.manager = manager;
     this.buyer = buyer;
-
+    this.hour = hour;
+    
     // Merging date and hour
-    const formattedHour = hour.toString().padStart(2,'0');
-    const replacedDate = date.replace('T00', 'T' + formattedHour + '');
+    //const formattedHour = hour.toString().padStart(2,'0');
+    //const replacedDate = date.toString().replace('T00', " "+formattedHour + '');
+
+    const dateObject = new Date(date);
+    dateObject.setHours(hour);
 
     // The date in the response is in yyyy:mm:ddT{timestamp} format hence conversion
     // to UTC format is not required.
-    this.date = replacedDate;
-    this.hour = hour;
-    
+    this.date = dateObject;
+
     this.campaign = campaign;
     this.adset = adset;
     this.adsetid = adset_id;

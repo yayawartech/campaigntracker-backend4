@@ -74,11 +74,26 @@ export class DMReportingService {
   async findAll(
     page: number = 1,
     pageSize: number = 10,
+    fromDate: string = null,
+    toDate: string = null,
   ): Promise<PaginationResponse<DMReportingEntity>> {
     const query = this.externalAPIRepostitory.createQueryBuilder();
 
-    query.offset((page - 1) * pageSize).limit(pageSize);
+    // From and To query manipulation
+    if (fromDate !== null && toDate !==null ){
+      const fromQueryDate = new Date(fromDate).toISOString().replace("T", " ").replace(".000Z", "");
 
+      const toQueryDate = new Date(toDate);
+      toQueryDate.setUTCHours(23, 59, 59);
+
+      const formattedToDate = toQueryDate.toISOString().replace("T", " ").replace(".000Z", "");
+      
+      query.where({ date: { $gte: fromQueryDate } })
+      query.andWhere({ date: { $lte: formattedToDate } });
+    }
+    
+
+    query.offset((page - 1) * pageSize).limit(pageSize);
     const [items, totalItems] = await query.getResultAndCount();
 
     return this.paginationService.getPaginationData(
