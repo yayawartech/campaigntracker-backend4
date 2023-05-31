@@ -15,21 +15,21 @@ import { Response } from 'express';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  generateToken(@Body() body: UserLoginDto, @Res() res: Response): any {
-    return this.authService.login(body).then((response) => {
-      const days_90 = 90 * 24 * 60 * 60 * 1000;
-      res
-        .status(200)
-        .cookie('token', response.token, {
-          expires: new Date(Date.now() + days_90),
-          httpOnly: true,
-        })
-        .json({
-          success: true,
-          message: 'user created successfully',
-        });
-    });
-  }
+  // @Post('login')
+  // @HttpCode(HttpStatus.OK)
+  // generateToken(@Body() body: UserLoginDto, @Res() res: Response): any {
+  //   return this.authService.login(body).then((response) => {
+  //     const days_90 = 90 * 24 * 60 * 60 * 1000;
+  //     res
+  //       .status(200)
+  //       .cookie('token', response.token, {
+  //         expires: new Date(Date.now() + days_90),
+  //         httpOnly: true,
+  //       })
+  //       .json({
+  //         success: true,
+  //         message: 'user created successfully',
+  //       });
+  //   });
+  // }
 }

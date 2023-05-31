@@ -1,33 +1,29 @@
 import { PaginationService } from 'src/pagination/pagination.service';
-import { EntityManager } from '@mikro-orm/core';
-import { EntityRepository } from '@mikro-orm/mysql';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersEntity } from './users.entity';
+import { PrismaService } from 'src/prisma/prisma.service';
+import crypto from 'crypto';
+import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(UsersEntity)
-    private readonly userRepository: EntityRepository<UsersEntity>,
-    private readonly paginationService:PaginationService<UsersEntity>, 
-    private readonly em: EntityManager,
+    private readonly paginationService: PaginationService<User>,
+    private prisma: PrismaService,
   ) {}
 
   // CREATE (POST) - Create a new user
   // Parameters:UserData: (name,email,password) in Object Form
 
-  async create(
-    dto: CreateUserDto,
-  ): Promise<{ message: string; data: UsersEntity }> {
+  async create(dto: CreateUserDto): Promise<{ message: string; user: User }> {
     // check uniqueness of username/email
 
     const { name, email, password } = dto;
 
-    const exists = await this.userRepository.count({ $or: [{ email }] });
-
-    if (exists > 0) {
+    const existUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existUser) {
       throw new HttpException(
         {
           message: 'Input data validation failed',
@@ -36,30 +32,48 @@ export class UsersService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    const hashedPassword = crypto.createHmac('sha256', password).digest('hex');
 
-    // create new user
-    const user = new UsersEntity(name, email, password);
-    await this.em.persistAndFlush(user);
+    const user = await this.prisma.user.create({
+      data: { name: name, email: email, password: hashedPassword },
+    });
+    console.log(user);
     return {
       message: 'User created successfully',
-      data: user,
+      user: user,
     };
   }
 
   // READ (GET) - find user by email
   // Parameters: userEmail: The email of the user
 
-  async findUserByEmail(email: string): Promise<UsersEntity | null> {
-    return await this.userRepository.findOne({ email: email });
-  }
+  // async findUserByEmail(email: string): Promise<UsersEntity | null> {
+  //   return await this.userRepository.findOne({ email: email });
+  // }
 
   // Get All Users
 
-  async findAllUsers(page: number = 1,pageSize:number = 10): Promise<PaginationResponse<UsersEntity>> {
-    const query = this.userRepository.createQueryBuilder();
-    query.offset((page - 1) * pageSize).limit(pageSize);
-    const [items,totalItems] = await query.getResultAndCount();
-    return this.paginationService.getPaginationData(page,pageSize,items,totalItems)
+  async findAllUsers(
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<PaginationResponse<User>> {
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
+
+    const users = await this.prisma.user.findMany({
+      skip,
+      take,
+    });
+
+    console.log(typeof users);
+    const totalItems = await this.prisma.user.count(); // Count total number of items
+
+    return this.paginationService.getPaginationData(
+      page,
+      pageSize,
+      users,
+      totalItems,
+    );
   }
 
   // READ (GET) - Get user details by ID
@@ -67,8 +81,8 @@ export class UsersService {
   // - userId: The ID of the user to fetch
   // Returns: Single user instance
 
-  async findUser(id: string): Promise<UsersEntity | null> {
-    return await this.userRepository.findOne({ id });
+  async findUser(id: number): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
   // UPDATE (PUT) - Update user details by ID
@@ -76,8 +90,11 @@ export class UsersService {
   // - userId: The ID of the user to update
   // - updatedUserData: An object containing the updated user data
 
-  async updateUser(id: string, userData: CreateUserDto): Promise<{message: string; data: UsersEntity}> {
-    const entityToUpdate = await this.userRepository.findOne({ id });
+  async updateUser(
+    id: number,
+    userData: CreateUserDto,
+  ): Promise<{ message: string; data: User }> {
+    const entityToUpdate = await this.prisma.user.findUnique({ where: { id } });
     if (!entityToUpdate) {
       throw new HttpException(
         {
@@ -88,11 +105,13 @@ export class UsersService {
     }
     // Update all properties at once
 
-    Object.assign(entityToUpdate, userData);
-    await this.em.flush();
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: userData,
+    });
     return {
       message: 'User updated successfully',
-      data: entityToUpdate,
+      data: user,
     };
   }
 
@@ -100,22 +119,18 @@ export class UsersService {
   // Parameters:
   // - userId: The ID of the user to delete
 
-  async deleteUser(
-    id: string,
-  ): Promise<{ message: string; data: UsersEntity }> {
-    const entityToDelete = await this.em.findOne(UsersEntity, { id: id });
-    if (!entityToDelete) {
+  async deleteUser(id: number): Promise<{ message: string }> {
+    const existUser = await this.prisma.user.findUnique({ where: { id } });
+    if (!existUser) {
       throw new HttpException(
         {
-          message: 'User Account not found',
+          message: 'Input Request',
+          errors: { email: 'User not found' },
         },
         HttpStatus.BAD_REQUEST,
       );
     }
-    await this.em.removeAndFlush(entityToDelete);
-    return {
-      message: 'User deleted successfully',
-      data: entityToDelete,
-    };
+    const user = await this.prisma.user.delete({ where: { id } });
+    return { message: 'user deleted successfully' };
   }
 }
