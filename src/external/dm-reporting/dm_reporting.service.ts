@@ -35,10 +35,10 @@ export class DMReportingService {
       endDate;
 
     try {
-      this.logger.log("Started cron job for DM Reporting API");
+      this.logger.log('Started cron job for DM Reporting API');
       const response: AxiosResponse = await axios.get(url);
-      
-      response.data.forEach(record => {
+
+      response.data.forEach((record) => {
         const campaign_data = new DMReportingEntity(
           record.Advertiser,
           record.Domain,
@@ -61,12 +61,12 @@ export class DMReportingService {
         this.em.persist(campaign_data);
       });
       await this.em.flush();
-      this.logger.log("Completed cron job for DM Reporting API");
+      this.logger.log('Completed cron job for DM Reporting API');
       this.logger.log(`Fetched ${response.data.length} entries succesfully`);
       const data = response.data;
       return data;
     } catch (error) {
-      this.logger.debug(error)
+      this.logger.debug(error);
       this.logger.error('Failed to fetch data from DM Reporting API');
     }
   }
@@ -80,18 +80,23 @@ export class DMReportingService {
     const query = this.externalAPIRepostitory.createQueryBuilder();
 
     // From and To query manipulation
-    if (fromDate !== null && toDate !==null ){
-      const fromQueryDate = new Date(fromDate).toISOString().replace("T", " ").replace(".000Z", "");
+    if (fromDate !== null && toDate !== null) {
+      const fromQueryDate = new Date(fromDate)
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
 
       const toQueryDate = new Date(toDate);
       toQueryDate.setUTCHours(23, 59, 59);
 
-      const formattedToDate = toQueryDate.toISOString().replace("T", " ").replace(".000Z", "");
-      
-      query.where({ date: { $gte: fromQueryDate } })
+      const formattedToDate = toQueryDate
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      query.where({ date: { $gte: fromQueryDate } });
       query.andWhere({ date: { $lte: formattedToDate } });
     }
-    
 
     query.offset((page - 1) * pageSize).limit(pageSize);
     const [items, totalItems] = await query.getResultAndCount();

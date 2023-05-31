@@ -12,6 +12,7 @@ import { DMReportingModule } from './external/dm-reporting/dm_reporting.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PaginationModule } from './pagination/pagination.module';
 import { AdSetsModule } from './facebook/ad-sets/ad_sets.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -19,11 +20,12 @@ import { AdSetsModule } from './facebook/ad-sets/ad_sets.module';
     MikroOrmModule.forRoot(),
     ScheduleModule.forRoot(),
     UsersModule,
-    AuthModule,
+    //AuthModule,
     DMReportingModule,
     AdAccountsModule,
     PaginationModule,
     AdSetsModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService, TrackerCronJob, Logger],

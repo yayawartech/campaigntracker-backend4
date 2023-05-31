@@ -25,23 +25,27 @@ export class UsersController {
   }
 
   @Get()
-  async findUsers(@Query('page') page: number,@Query('pageSize') pageSize: number) {
-    const resp = await this.userService.findAllUsers(page,pageSize)
-    return resp
+  async findUsers(
+    @Query('page') page: number,
+    @Query('pageSize') pageSize: number,
+  ) {
+    const resp = await this.userService.findAllUsers(page, pageSize);
+    return resp;
   }
 
   @Get(':id')
-  async findAdAccount(@Param('id') id: string) {
-    return this.userService.findUser(id);
+  async findAdAccount(@Param('id') id: number) {
+    console.log('idtype', typeof id);
+    return this.userService.findUser(+id);
   }
 
   @Delete(':id')
   async deleteUser(@Param('id') id: string) {
-    return this.userService.deleteUser(id);
+    return this.userService.deleteUser(+id);
   }
 
   @Put(':id')
   async updateuser(@Body() userData: CreateUserDto, @Param('id') id: string) {
-    return this.userService.updateUser(id, userData);
+    return this.userService.updateUser(+id, userData);
   }
 }
