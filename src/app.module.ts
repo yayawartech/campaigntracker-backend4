@@ -28,7 +28,8 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TrackerCronJob, Logger],
+  //providers: [AppService, TrackerCronJob, Logger],
+  providers: [AppService, Logger],
 })
 export class AppModule implements OnModuleInit {
   constructor(private readonly orm: MikroORM) {}
