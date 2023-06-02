@@ -41,3 +41,46 @@ model AdSets{
   createdAt   DateTime @default(now())
 
 }
+
+model DmReportingHistory{
+  id Int      @id @default(autoincrement())
+  advertiser String
+  domain String
+  manager String | null
+  buyer String 
+  date DateTime @default(now())
+  hour Int
+  campaign String
+  adset String
+  adsetid Int
+  revenue Float
+  spend Int 
+  link_clicks Int
+  ad_clicks Int
+  gp Float
+  searches Int
+  clicks Int
+  tq Int
+}
+
+
+model DmReporting{
+  id Int      @id @default(autoincrement())
+  advertiser String
+  domain String
+  manager String
+  buyer String 
+  date DateTime @default(now())
+  hour Int
+  campaign String
+  adset String
+  adsetid Int
+  revenue Int
+  spend Int 
+  link_clicks Int
+  ad_clicks Int
+  gp Int
+  searches Int
+  clicks Int
+  tq Int
+}
