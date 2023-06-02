@@ -1,27 +1,22 @@
-import { EntityManager } from '@mikro-orm/core';
-import { EntityRepository } from '@mikro-orm/mysql';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { DMReportingEntity } from './dm_reporting.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
+import { DmReportingHistory } from '@prisma/client';
 import {
   DM_REPORTING_ACCESS_KEY,
   DM_REPORTING_ACCESS_TOKEN,
   DM_REPORTING_URL,
 } from 'src/config';
 import { PaginationService } from 'src/pagination/pagination.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class DMReportingService {
   constructor(
-    @InjectRepository(DMReportingEntity)
-    private readonly externalAPIRepostitory: EntityRepository<DMReportingEntity>,
-    private readonly em: EntityManager,
-    private readonly paginationService: PaginationService<DMReportingEntity>,
+    private prismaService: PrismaService,
+    private readonly paginationService: PaginationService<DmReportingHistory>,
     private readonly logger: Logger,
   ) {}
 
-  // Service Commands files
   async fetchExternalApiData(startDate: string, endDate: string): Promise<any> {
     const url =
       DM_REPORTING_URL +
@@ -37,34 +32,39 @@ export class DMReportingService {
     try {
       this.logger.log('Started cron job for DM Reporting API');
       const response: AxiosResponse = await axios.get(url);
-
-      response.data.forEach((record) => {
-        const campaign_data = new DMReportingEntity(
-          record.Advertiser,
-          record.Domain,
-          record.Manager,
-          record.Buyer,
-          record.Date,
-          record.Hour,
-          record.Campaign,
-          record.Adset,
-          record.Adsetid,
-          record.Revenue,
-          record.Spend,
-          record.Link_Clicks,
-          record.Ad_Clicks,
-          record.GP,
-          record.Searches,
-          record.Clicks,
-          record.TQ,
+      if (response) {
+        const dataToInsert: DmReportingHistory[] = response.data.map(
+          (record) => {
+            const createdRecords = this.prismaService.dmReportingHistory.create(
+              {
+                data: {
+                  advertiser: record.Advertiser,
+                  domain: record.Domain,
+                  manager: record.Manager,
+                  buyer: record.Buyer,
+                  date: record.Date,
+                  hour: record.Hour,
+                  campaign: record.Campaign,
+                  adset: record.Adset,
+                  adsetid: record.Adsetid,
+                  revenue: record.Revenue,
+                  spend: record.Spend,
+                  link_clicks: record.Link_Clicks,
+                  ad_clicks: record.Ad_Clicks,
+                  gp: record.GP,
+                  searches: record.Searches,
+                  clicks: record.Clicks,
+                  tq: record.TQ,
+                },
+              },
+            );
+          },
         );
-        this.em.persist(campaign_data);
-      });
-      await this.em.flush();
+      }
+
       this.logger.log('Completed cron job for DM Reporting API');
-      this.logger.log(`Fetched ${response.data.length} entries succesfully`);
-      const data = response.data;
-      return data;
+      this.logger.log(`Fetched ${response.data.length} entries successfully`);
+      return response.data;
     } catch (error) {
       this.logger.debug(error);
       this.logger.error('Failed to fetch data from DM Reporting API');
@@ -76,8 +76,10 @@ export class DMReportingService {
     pageSize: number = 10,
     fromDate: string = null,
     toDate: string = null,
-  ): Promise<PaginationResponse<DMReportingEntity>> {
-    const query = this.externalAPIRepostitory.createQueryBuilder();
+  ): Promise<PaginationResponse<DmReportingHistory>> {
+    const skip = (page - 1) * pageSize;
+    const take: number = +pageSize;
+    let where: any = {};
 
     // From and To query manipulation
     if (fromDate !== null && toDate !== null) {
@@ -94,12 +96,21 @@ export class DMReportingService {
         .replace('T', ' ')
         .replace('.000Z', '');
 
-      query.where({ date: { $gte: fromQueryDate } });
-      query.andWhere({ date: { $lte: formattedToDate } });
+      where = {
+        ...where,
+        date: {
+          gte: fromQueryDate,
+          lte: formattedToDate,
+        },
+      };
     }
 
-    query.offset((page - 1) * pageSize).limit(pageSize);
-    const [items, totalItems] = await query.getResultAndCount();
+    const items = await this.prismaService.dmReportingHistory.findMany({
+      skip,
+      take,
+      where,
+    });
+    const totalItems = await this.prismaService.dmReportingHistory.count();
 
     return this.paginationService.getPaginationData(
       page,
