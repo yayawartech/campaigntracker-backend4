@@ -11,7 +11,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PaginationModule } from './pagination/pagination.module';
 import { AdSetsModule } from './facebook/ad-sets/ad_sets.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { DmReportingCronJob } from './cron-dmreporting';
 import { PrismaService } from './prisma/prisma.service';
 
 @Module({
@@ -27,14 +26,7 @@ import { PrismaService } from './prisma/prisma.service';
     PrismaModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    TrackerCronJob,
-    Logger,
-    DmReportingCronJob,
-    PrismaService,
-  ],
-  // providers: [AppService, Logger, TrackerCronJob],
+  providers: [AppService, TrackerCronJob, Logger, PrismaService],
 })
 export class AppModule implements OnModuleInit {
   async onModuleInit(): Promise<void> {}
