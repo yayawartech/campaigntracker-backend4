@@ -1,5 +1,3 @@
-import { MikroORM } from '@mikro-orm/core';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -13,14 +11,15 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PaginationModule } from './pagination/pagination.module';
 import { AdSetsModule } from './facebook/ad-sets/ad_sets.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { DmReportingCronJob } from './cron-dmreporting';
+import { PrismaService } from './prisma/prisma.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    MikroOrmModule.forRoot(),
     ScheduleModule.forRoot(),
     UsersModule,
-    //AuthModule,
+    AuthModule,
     DMReportingModule,
     AdAccountsModule,
     PaginationModule,
@@ -28,11 +27,15 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
   ],
   controllers: [AppController],
-  //providers: [AppService, TrackerCronJob, Logger],
-  providers: [AppService, Logger],
+  providers: [
+    AppService,
+    TrackerCronJob,
+    Logger,
+    DmReportingCronJob,
+    PrismaService,
+  ],
+  // providers: [AppService, Logger, TrackerCronJob],
 })
 export class AppModule implements OnModuleInit {
-  constructor(private readonly orm: MikroORM) {}
-
   async onModuleInit(): Promise<void> {}
 }

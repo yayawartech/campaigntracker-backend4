@@ -5,7 +5,6 @@ import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
-import { UsersService } from '../users/users.service';
 import { JWT_SECRET_TOKEN } from '../config';
 const DAY_IN_SECOND = 86400;
 @Module({

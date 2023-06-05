@@ -46,15 +46,15 @@ model DmReportingHistory{
   id Int      @id @default(autoincrement())
   advertiser String
   domain String
-  manager String | null
+  manager String?
   buyer String 
-  date DateTime @default(now())
+  date String
   hour Int
   campaign String
-  adset String
-  adsetid Int
+  adset String?
+  adsetid Int?
   revenue Float
-  spend Int 
+  spend Float 
   link_clicks Int
   ad_clicks Int
   gp Float
@@ -68,18 +68,18 @@ model DmReporting{
   id Int      @id @default(autoincrement())
   advertiser String
   domain String
-  manager String
+  manager String?
   buyer String 
-  date DateTime @default(now())
+  date String
   hour Int
   campaign String
-  adset String
-  adsetid Int
-  revenue Int
-  spend Int 
+  adset String?
+  adsetid Int?
+  revenue Float
+  spend Float 
   link_clicks Int
   ad_clicks Int
-  gp Int
+  gp Float
   searches Int
   clicks Int
   tq Int

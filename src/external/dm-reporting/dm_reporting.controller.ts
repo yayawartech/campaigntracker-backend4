@@ -1,7 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
 import { DMReportingService } from './dm_reporting.service';
-import { DMReportingEntity } from './dm_reporting.entity';
 import { DmReportingHistory } from '@prisma/client';
 //@UseGuards(CustomCookieGuard)
 @Controller('campaigns')

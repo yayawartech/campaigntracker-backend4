@@ -1,8 +1,6 @@
 import { PaginationService } from 'src/pagination/pagination.service';
-import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UsersEntity } from './users.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
 import crypto from 'crypto';
 import { Prisma, User } from '@prisma/client';
@@ -37,7 +35,6 @@ export class UsersService {
     const user = await this.prisma.user.create({
       data: { name: name, email: email, password: hashedPassword },
     });
-    console.log(user);
     return {
       message: 'User created successfully',
       user: user,
@@ -47,9 +44,13 @@ export class UsersService {
   // READ (GET) - find user by email
   // Parameters: userEmail: The email of the user
 
-  // async findUserByEmail(email: string): Promise<UsersEntity | null> {
-  //   return await this.userRepository.findOne({ email: email });
-  // }
+  async findUserByEmail(email: string): Promise<User | null> {
+    return await this.prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+  }
 
   // Get All Users
 
@@ -65,7 +66,6 @@ export class UsersService {
       take,
     });
 
-    console.log(typeof users);
     const totalItems = await this.prisma.user.count(); // Count total number of items
 
     return this.paginationService.getPaginationData(
