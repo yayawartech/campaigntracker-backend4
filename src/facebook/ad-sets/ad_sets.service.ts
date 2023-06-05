@@ -1,7 +1,4 @@
-import { EntityManager, EntityRepository } from '@mikro-orm/mysql';
-import { InjectRepository } from '@mikro-orm/nestjs';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AdSetsEntity } from './ad_sets.entity';
 import { AdAccountsService } from 'src/ad_accounts/ad_accounts.service';
 import { FACEBOOK_ACCESS_TOKEN, FACEBOOK_API_URL } from 'src/config';
 import axios, { AxiosResponse } from 'axios';

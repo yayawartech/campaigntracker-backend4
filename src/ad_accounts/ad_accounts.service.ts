@@ -20,7 +20,6 @@ export class AdAccountsService {
     const exists = await this.prisma.adAccount.findFirst({
       where: { accountId },
     });
-    console.log('ananta');
     if (exists) {
       throw new HttpException(
         {
@@ -59,7 +58,6 @@ export class AdAccountsService {
       take,
     });
 
-    console.log(typeof adAccounts);
     const totalItems = await this.prisma.user.count(); // Count total number of items
 
     return this.paginationService.getPaginationData(

@@ -35,18 +35,19 @@ export class DMReportingService {
       if (response) {
         const dataToInsert: DmReportingHistory[] = response.data.map(
           (record) => {
+            const manager = record.Manager || null;
             const createdRecords = this.prismaService.dmReportingHistory.create(
               {
                 data: {
                   advertiser: record.Advertiser,
                   domain: record.Domain,
-                  manager: record.Manager,
+                  manager: manager,
                   buyer: record.Buyer,
                   date: record.Date,
                   hour: record.Hour,
                   campaign: record.Campaign,
                   adset: record.Adset,
-                  adsetid: record.Adsetid,
+                  adsetid: record.AdsetId,
                   revenue: record.Revenue,
                   spend: record.Spend,
                   link_clicks: record.Link_Clicks,
@@ -58,8 +59,10 @@ export class DMReportingService {
                 },
               },
             );
+            return createdRecords;
           },
         );
+        const createdDmReporting = await Promise.all(dataToInsert);
       }
 
       this.logger.log('Completed cron job for DM Reporting API');
@@ -68,6 +71,47 @@ export class DMReportingService {
     } catch (error) {
       this.logger.debug(error);
       this.logger.error('Failed to fetch data from DM Reporting API');
+    }
+  }
+
+  async DmReportingCronJob(): Promise<void> {
+    try {
+      const data = await this.prismaService.dmReportingHistory.findMany({
+        take: 10,
+      });
+      const insertData = await Promise.all(
+        data.map(async (record) => {
+          try {
+            return await this.prismaService.dmReporting.create({
+              data: {
+                advertiser: record.advertiser,
+                domain: record.domain,
+                manager: record.manager,
+                buyer: record.buyer,
+                date: record.date,
+                hour: record.hour,
+                campaign: record.campaign,
+                adset: record.adset,
+                adsetid: record.adsetid,
+                revenue: record.revenue,
+                spend: record.spend,
+                link_clicks: record.link_clicks,
+                ad_clicks: record.ad_clicks,
+                gp: record.gp,
+                searches: record.searches,
+                clicks: record.clicks,
+                tq: record.tq,
+              },
+            });
+          } catch (error) {
+            this.logger.error('Error inserting record:', error);
+            return null;
+          }
+        }),
+      );
+      this.logger.log('Inserted records:');
+    } catch (error) {
+      this.logger.error('Error fetching data:', error);
     }
   }
 

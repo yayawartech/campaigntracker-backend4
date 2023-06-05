@@ -11,38 +11,38 @@ export class AuthService {
     private readonly userService: UsersService,
   ) {}
 
-  // async login(body: UserLoginDto): Promise<AuthLoginResponse> {
-  //   const user = await this.userService.findUserByEmail(body.email);
-  //   if (user == null) {
-  //     throw new HttpException(
-  //       {
-  //         message: 'Invalid email or password',
-  //       },
-  //       HttpStatus.UNAUTHORIZED,
-  //     );
-  //   }
-  //   const userPassword = crypto
-  //     .createHmac('sha256', body.password)
-  //     .digest('hex');
-  //   if (userPassword != user.password) {
-  //     throw new HttpException(
-  //       {
-  //         message: 'Invalid email or password',
-  //       },
-  //       HttpStatus.UNAUTHORIZED,
-  //     );
-  //   }
+  async login(body: UserLoginDto): Promise<AuthLoginResponse> {
+    const user = await this.userService.findUserByEmail(body.email);
+    if (user == null) {
+      throw new HttpException(
+        {
+          message: 'Invalid email or password',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    const userPassword = crypto
+      .createHmac('sha256', body.password)
+      .digest('hex');
+    if (userPassword != user.password) {
+      throw new HttpException(
+        {
+          message: 'Invalid email or password',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
 
-  //   const token = this.jwtService.sign({
-  //     id: user.id,
-  //     username: user.name,
-  //   });
-  //   return {
-  //     id: user.id,
-  //     token: token,
-  //     expires_in: 86400,
-  //     name: user.name,
-  //     email: user.email,
-  //   };
-  // }
+    const token = this.jwtService.sign({
+      id: user.id,
+      username: user.name,
+    });
+    return {
+      id: user.id,
+      token: token,
+      expires_in: 86400,
+      name: user.name,
+      email: user.email,
+    };
+  }
 }
