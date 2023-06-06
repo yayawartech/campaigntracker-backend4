@@ -30,7 +30,7 @@ export class DMReportingService {
       endDate;
 
     try {
-      this.logger.log('Started cron job for DM Reporting API');
+      this.logger.log('Started cron job for History DM Reporting API');
       const response: AxiosResponse = await axios.get(url);
       if (response) {
         const dataToInsert: DmReportingHistory[] = response.data.map(
@@ -65,16 +65,17 @@ export class DMReportingService {
         const createdDmReporting = await Promise.all(dataToInsert);
       }
 
-      this.logger.log('Completed cron job for DM Reporting API');
+      this.logger.log('Completed cron job for History DM Reporting API');
       this.logger.log(`Fetched ${response.data.length} entries successfully`);
       return response.data;
     } catch (error) {
       this.logger.debug(error);
-      this.logger.error('Failed to fetch data from DM Reporting API');
+      this.logger.error('Failed to fetch data from DM Reporting(History) API');
     }
   }
 
   async DmReportingCronJob(): Promise<void> {
+    this.logger.log('Started cron job for Latest DM Reporting');
     try {
       const data = await this.prismaService.dmReportingHistory.findMany({
         take: 10,
@@ -103,17 +104,19 @@ export class DMReportingService {
                 tq: record.tq,
               },
             });
-            this.logger.log('Latest DmReporting Data Inserted');
             return latestData;
           } catch (error) {
-            this.logger.error('Error inserting record:', error);
+            this.logger.error(
+              'Error inserting Latest DM Reporting record:',
+              error,
+            );
             return null;
           }
         }),
       );
-      this.logger.log('Inserted records:');
+      this.logger.log('Latest DmReporting Data Inserted');
     } catch (error) {
-      this.logger.error('Error fetching data:', error);
+      this.logger.error('Error fetching data Latest DM Reporting:', error);
     }
   }
 

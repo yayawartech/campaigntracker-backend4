@@ -65,7 +65,7 @@ export class AdSetsService {
           }
         } catch (error) {
           this.logger.debug(error);
-          this.logger.error('Failed to fetch data from Facebook API');
+          this.logger.error('Failed to fetch data from Facebook API(History)');
         }
       });
     }
@@ -75,7 +75,7 @@ export class AdSetsService {
 
   async AdSetsCronJob(): Promise<void> {
     try {
-      this.logger.log('Started cron job for Facebook AdSetsLatest Data');
+      this.logger.log('Started cron job for Facebook Latest AdSets Data');
       const data = await this.prisma.adSetsHistory.findMany({
         take: 10,
       });
@@ -93,16 +93,16 @@ export class AdSetsService {
                 adaccount_id: record.adaccount_id,
               },
             });
-            this.logger.log('Latest AdSets Data Inserted');
             return InsertData;
           } catch (error) {
-            this.logger.error('Error inserting record:', error);
+            this.logger.error('Error inserting Latest AdSets record:', error);
             return null;
           }
         }),
       );
+      this.logger.log('Latest AdSets Data Inserted');
     } catch (error) {
-      this.logger.error('Error fetching data:', error);
+      this.logger.error('Error fetching Latest AdSets data:', error);
     }
   }
 
