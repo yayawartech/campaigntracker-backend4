@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
-import { DmReportingHistory } from '@prisma/client';
+import { DmReporting, DmReportingHistory } from '@prisma/client';
 import {
   DM_REPORTING_ACCESS_KEY,
   DM_REPORTING_ACCESS_TOKEN,
@@ -82,7 +82,7 @@ export class DMReportingService {
       const insertData = await Promise.all(
         data.map(async (record) => {
           try {
-            return await this.prismaService.dmReporting.create({
+            const latestData = await this.prismaService.dmReporting.create({
               data: {
                 advertiser: record.advertiser,
                 domain: record.domain,
@@ -103,6 +103,8 @@ export class DMReportingService {
                 tq: record.tq,
               },
             });
+            this.logger.log('Latest DmReporting Data Inserted');
+            return latestData;
           } catch (error) {
             this.logger.error('Error inserting record:', error);
             return null;
@@ -120,7 +122,7 @@ export class DMReportingService {
     pageSize: number = 10,
     fromDate: string = null,
     toDate: string = null,
-  ): Promise<PaginationResponse<DmReportingHistory>> {
+  ): Promise<PaginationResponse<DmReporting>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
     let where: any = {};
@@ -149,7 +151,7 @@ export class DMReportingService {
       };
     }
 
-    const items = await this.prismaService.dmReportingHistory.findMany({
+    const items = await this.prismaService.dmReporting.findMany({
       skip,
       take,
       where,

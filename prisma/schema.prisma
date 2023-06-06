@@ -29,7 +29,7 @@ model AdAccount{
   updatedAt   DateTime @updatedAt
 }
 
-model AdSets{
+model AdSetsHistory{
   id Int      @id @default(autoincrement())
   status String
   facebook_id String
@@ -40,6 +40,17 @@ model AdSets{
   start_time String
   createdAt   DateTime @default(now())
 
+}
+model AdSets{
+  id Int      @id @default(autoincrement())
+  status String
+  facebook_id String
+  adaccount_id String
+  name String
+  daily_budget String
+  created_time String
+  start_time String
+  createdAt   DateTime @default(now())
 }
 
 model DmReportingHistory{
@@ -84,3 +95,5 @@ model DmReporting{
   clicks Int
   tq Int
 }
+
+
