@@ -38,7 +38,6 @@ export class AdAccountsService {
         status: status,
       },
     });
-
     return {
       message: 'Ad account created successfully',
       data: ad_account,
@@ -51,7 +50,7 @@ export class AdAccountsService {
     pageSize: number = 10,
   ): Promise<PaginationResponse<AdAccount>> {
     const skip = (page - 1) * pageSize;
-    const take = pageSize;
+    const take = Number(pageSize);
 
     const adAccounts = await this.prisma.adAccount.findMany({
       skip,
@@ -69,7 +68,8 @@ export class AdAccountsService {
   }
 
   async findAllAccounts(): Promise<any> {
-    return ['1', '2', '3'];
+    const adAccounts = await this.prisma.adAccount.findMany();
+    return adAccounts;
   }
 
   // READ (GET) - find Ad Accounts by accountID

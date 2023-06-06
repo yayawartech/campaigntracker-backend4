@@ -59,7 +59,7 @@ export class UsersService {
     pageSize: number = 10,
   ): Promise<PaginationResponse<User>> {
     const skip = (page - 1) * pageSize;
-    const take = pageSize;
+    const take = Number(pageSize);
 
     const users = await this.prisma.user.findMany({
       skip,
