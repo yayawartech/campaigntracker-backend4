@@ -1,89 +1,103 @@
-import { EntityManager, EntityRepository } from '@mikro-orm/mysql';
-import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable, Query } from '@nestjs/common';
-import { AdAccountsEntity } from './ad_accounts.entity';
 import { AdAccountDto } from './dto/create-adaccounts.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
+import { AdAccount, Prisma } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AdAccountsService {
   constructor(
-    @InjectRepository(AdAccountsEntity)
-    private readonly adAccountsRepository: EntityRepository<AdAccountsEntity>,
-    private readonly paginationService: PaginationService<AdAccountsEntity>,
-    private readonly em: EntityManager,
+    private readonly paginationService: PaginationService<AdAccount>,
+    private prisma: PrismaService,
   ) {}
   // CREATE (POST) - Create a new Ad Accounts
   // Parameters:UserData: (source,accountID,name,timeZone,status) in Object Form
   async create(
     dto: AdAccountDto,
-  ): Promise<{ message: string; data: AdAccountsEntity }> {
+  ): Promise<{ message: string; data: AdAccount }> {
     const { accountId, source, name, status, timeZone } = dto;
 
-    const existingAccount = await this.adAccountsRepository.findOne({
-      accountId: accountId,
-      // source: source,
+    const exists = await this.prisma.adAccount.findFirst({
+      where: { accountId },
     });
-
-    if (existingAccount) {
+    if (exists) {
       throw new HttpException(
         {
-          message: 'Ad Account already exists',
+          message: 'Ad Account already exists aaa',
         },
         HttpStatus.CONFLICT,
       );
     }
 
-    const adAccount = new AdAccountsEntity(
-      source,
-      accountId,
-      name,
-      timeZone,
-      status,
-    );
-    await this.em.persistAndFlush(adAccount);
+    const ad_account = await this.prisma.adAccount.create({
+      data: {
+        source: source,
+        accountId: accountId,
+        name: name,
+        timeZone: timeZone,
+        status: status,
+      },
+    });
     return {
       message: 'Ad account created successfully',
-      data: adAccount,
+      data: ad_account,
     };
   }
 
   // Retrieve all AdAccounts
-  async findAllAdAccounts(page: number = 1, pageSize: number = 10): Promise<PaginationResponse<AdAccountsEntity>> {
-    const query = this.adAccountsRepository.createQueryBuilder();
-    query.offset((page - 1) * pageSize).limit(pageSize);
-    const [items,totalItems]  = await query.getResultAndCount();
-    return this.paginationService.getPaginationData(page,pageSize,items,totalItems)
+  async findAllAdAccounts(
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<PaginationResponse<AdAccount>> {
+    const skip = (page - 1) * pageSize;
+    const take = Number(pageSize);
+
+    const adAccounts = await this.prisma.adAccount.findMany({
+      skip,
+      take,
+    });
+
+    const totalItems = await this.prisma.user.count(); // Count total number of items
+
+    return this.paginationService.getPaginationData(
+      page,
+      pageSize,
+      adAccounts,
+      totalItems,
+    );
   }
 
-  async findAllAccounts(): Promise<AdAccountsEntity[]> {
-    return await this.adAccountsRepository.findAll();
+  async findAllAccounts(): Promise<any> {
+    const adAccounts = await this.prisma.adAccount.findMany();
+    return adAccounts;
   }
-
-
-  
 
   // READ (GET) - find Ad Accounts by accountID
   // Parameters: id: The accountID of the Ad Accounts
-  async findAdAccount(id: string): Promise<AdAccountsEntity | null> {
-    return await this.adAccountsRepository.findOne({ id });
+  async findAdAccount(id: number): Promise<AdAccount | null> {
+    return await this.prisma.adAccount.findUnique({ where: { id } });
   }
 
   // DELETE (DELETE) - Delete Ad Accounts by accountId
   // Parameters:
   // - id: The ID of the Ad Accounts to delete
 
-  async deleteAdAccount(
-    id: string,
-  ): Promise<{ message: string; data: AdAccountsEntity }> {
-    const entityToDelete = await this.em.findOne(AdAccountsEntity, {
-      id: id,
+  async deleteAdAccount(id: number): Promise<{ message: string }> {
+    const entityToDelete = await this.prisma.adAccount.findUnique({
+      where: { id },
     });
-
-    await this.em.removeAndFlush(entityToDelete);
+    if (!entityToDelete) {
+      throw new HttpException(
+        {
+          message: 'Input Request',
+          errors: { email: 'Add Account not found' },
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const adAccount = await this.prisma.adAccount.delete({ where: { id } });
     return {
       message: 'Ad account deleted successfully',
-      data: entityToDelete,
     };
   }
 
@@ -93,11 +107,11 @@ export class AdAccountsService {
   // - updatedAdaccountData: An object containing the updated user data
 
   async updateAdAccount(
-    id: string,
+    id: number,
     adAccountData: AdAccountDto,
-  ): Promise<{message: string; data: AdAccountsEntity }> {
-    const entityToUpdate = await this.adAccountsRepository.findOne({
-      id: id,
+  ): Promise<{ message: string; data: AdAccount }> {
+    const entityToUpdate = await this.prisma.adAccount.findUnique({
+      where: { id },
     });
     if (!entityToUpdate) {
       throw new HttpException(
@@ -107,12 +121,13 @@ export class AdAccountsService {
         HttpStatus.NOT_FOUND,
       );
     }
-    Object.assign(entityToUpdate, adAccountData); // Update all properties at once
-    entityToUpdate.updatedDate = new Date();
-    await this.em.flush();
+    const adAccount = await this.prisma.adAccount.update({
+      where: { id },
+      data: adAccountData,
+    });
     return {
       message: 'Ad account deleted successfully',
-      data: entityToUpdate,
+      data: adAccount,
     };
   }
 }

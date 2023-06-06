@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email      String   @unique
+  name       String?
+  password   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AdAccount{
+  id          Int      @id @default(autoincrement())
+  source     String
+  accountId  String
+  name   String?
+  timeZone String
+  status String
+  updatedAt   DateTime @updatedAt
+}
+
+model AdSetsHistory{
+  id Int      @id @default(autoincrement())
+  status String
+  facebook_id String
+  adaccount_id String
+  name String
+  daily_budget String
+  created_time String
+  start_time String
+  createdAt   DateTime @default(now())
+
+}
+model AdSets{
+  id Int      @id @default(autoincrement())
+  status String
+  facebook_id String
+  adaccount_id String
+  name String
+  daily_budget String
+  created_time String
+  start_time String
+  createdAt   DateTime @default(now())
+}
+
+model DmReportingHistory{
+  id Int      @id @default(autoincrement())
+  advertiser String
+  domain String
+  manager String?
+  buyer String 
+  date String
+  hour Int
+  campaign String
+  adset String?
+  adsetid Int?
+  revenue Float
+  spend Float 
+  link_clicks Int
+  ad_clicks Int
+  gp Float
+  searches Int
+  clicks Int
+  tq Int
+}
+
+
+model DmReporting{
+  id Int      @id @default(autoincrement())
+  advertiser String
+  domain String
+  manager String?
+  buyer String 
+  date String
+  hour Int
+  campaign String
+  adset String?
+  adsetid Int?
+  revenue Float
+  spend Float 
+  link_clicks Int
+  ad_clicks Int
+  gp Float
+  searches Int
+  clicks Int
+  tq Int
+}
+
+
