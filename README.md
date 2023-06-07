@@ -28,11 +28,11 @@
 
 ## Installation
 
-# Clone the repository
+### Clone the repository
 ```bash
 $ git clone https://github.com/yayawartech/campaigntracker-backend.git
 ```
-# Install Necessary Libraries
+### Install Necessary Libraries
 
 ```bash
 $ npm install
@@ -40,21 +40,21 @@ $ npm install
 # For Yarn
 $ yarn install
 ```
-# Create config.ts file
+### Create config.ts file
 
 Make a copy of config.ts.example to create a new config.ts file with required parameters.
 
-# Create .env file
+### Create .env file
 
 Make a copy of example.env to create a new .env file with required parameters for DATABASE_URL
 
-# Migrate to the new database
+### Migrate to the new database
 
 ```bash
 $ npx prisma migrate dev -name init
 ```
 
-# Create Prisma Client Code
+### Create Prisma Client Code
 
 ```bash
 $ npx prisma generate
