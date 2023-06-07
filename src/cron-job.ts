@@ -13,8 +13,8 @@ export class TrackerCronJob {
 
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async handleCron(): Promise<any> {
-    const startDate = '2023-05-21T00:00:00';
-    const endDate = '2023-05-21T00:00:00';
+    const startDate = '2023-06-05T00:00:00';
+    const endDate = '2023-06-05T00:00:00';
     this.extAPIService.fetchExternalApiData(startDate, endDate);
     this.adSetsService.fetchAdSetsDataFromApi();
   }
