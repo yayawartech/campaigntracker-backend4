@@ -31,12 +31,12 @@ export class AdAccountsController {
 
   @Get(':id')
   async findAdAccount(@Param('id') id: string) {
-    return this.adAccountsService.findAdAccount(id);
+    return this.adAccountsService.findAdAccount(+id);
   }
 
   @Delete(':id')
   async deleteAdAccount(@Param('id') id: string) {
-    return this.adAccountsService.deleteAdAccount(id);
+    return this.adAccountsService.deleteAdAccount(+id);
   }
 
   @Put(':id')
@@ -44,6 +44,6 @@ export class AdAccountsController {
     @Body() adAccountData: AdAccountDto,
     @Param('id') id: string,
   ) {
-    return this.adAccountsService.updateAdAccount(id, adAccountData);
+    return this.adAccountsService.updateAdAccount(+id, adAccountData);
   }
 }

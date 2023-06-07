@@ -1,5 +1,5 @@
 interface AuthLoginResponse {
-  id: string;
+  id: number;
   token: string;
 
   name: string;
