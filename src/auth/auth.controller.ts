@@ -28,7 +28,7 @@ export class AuthController {
         })
         .json({
           success: true,
-          message: 'user created successfully',
+          message: 'LogIn Successfully',
         });
     });
   }

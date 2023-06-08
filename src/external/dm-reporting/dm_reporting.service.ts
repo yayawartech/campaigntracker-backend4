@@ -1,85 +1,122 @@
-import { EntityManager } from '@mikro-orm/core';
-import { EntityRepository } from '@mikro-orm/mysql';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { DMReportingEntity } from './dm_reporting.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
+import { DmReporting, DmReportingHistory, Prisma } from '@prisma/client';
 import {
   DM_REPORTING_ACCESS_KEY,
   DM_REPORTING_ACCESS_TOKEN,
   DM_REPORTING_URL,
 } from 'src/config';
 import { PaginationService } from 'src/pagination/pagination.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { DataMigrationQuery } from './query';
 
 @Injectable()
 export class DMReportingService {
   constructor(
-    @InjectRepository(DMReportingEntity)
-    private readonly externalAPIRepostitory: EntityRepository<DMReportingEntity>,
-    private readonly em: EntityManager,
-    private readonly paginationService: PaginationService<DMReportingEntity>,
+    private prismaService: PrismaService,
+    private readonly paginationService: PaginationService<DmReportingHistory>,
     private readonly logger: Logger,
   ) {}
 
-  // Service Commands files
   async fetchExternalApiData(startDate: string, endDate: string): Promise<any> {
-    const url =
-      DM_REPORTING_URL +
-      '&key=' +
-      DM_REPORTING_ACCESS_KEY +
-      '&token=' +
-      DM_REPORTING_ACCESS_TOKEN +
-      '&startDate=' +
-      startDate +
-      '&endDate=' +
-      endDate;
+    const params = new URLSearchParams();
+    params.append('aff', 'hudson interactive');
+    params.append('key', DM_REPORTING_ACCESS_KEY);
+    params.append('token', DM_REPORTING_ACCESS_TOKEN);
+    params.append('startDate', startDate);
+    params.append('endDate', endDate);
 
+    const url = DM_REPORTING_URL + params.toString();
     try {
-      this.logger.log("Started cron job for DM Reporting API");
+      this.logger.log('Started cron job for History DM Reporting API');
       const response: AxiosResponse = await axios.get(url);
-      
-      response.data.forEach(record => {
-        const campaign_data = new DMReportingEntity(
-          record.Advertiser,
-          record.Domain,
-          record.Manager,
-          record.Buyer,
-          record.Date,
-          record.Hour,
-          record.Campaign,
-          record.Adset,
-          record.Adsetid,
-          record.Revenue,
-          record.Spend,
-          record.Link_Clicks,
-          record.Ad_Clicks,
-          record.GP,
-          record.Searches,
-          record.Clicks,
-          record.TQ,
+      if (response) {
+        const dataToInsert: DmReportingHistory[] = response.data.map(
+          (record) => {
+            const manager = record.Manager || null;
+            const recordDate =
+              record.Date.substring(0, 10) + ' ' + record.Hour + ':00:00';
+            const createdRecords = this.prismaService.dmReportingHistory.create(
+              {
+                data: {
+                  campaign: '',
+                  advertiser: record.Advertiser,
+                  domain: record.Domain,
+                  manager: manager,
+                  buyer: record.Buyer,
+                  start_time: new Date(recordDate),
+                  adset: record.Adset_name,
+                  adset_id: record.Adset_Id,
+                  revenue: record.Revenue,
+                  spend: record.Spend,
+                  link_clicks: record.Link_Clicks,
+                  ad_clicks: record.Ad_Clicks,
+                  gp: record.GP,
+                  searches: record.Searches,
+                  clicks: record.Clicks,
+                  tq: record.TQ,
+                },
+              },
+            );
+            return createdRecords;
+          },
         );
-        this.em.persist(campaign_data);
-      });
-      await this.em.flush();
-      this.logger.log("Completed cron job for DM Reporting API");
-      this.logger.log(`Fetched ${response.data.length} entries succesfully`);
-      const data = response.data;
-      return data;
+        await Promise.all(dataToInsert);
+      }
+
+      await this.prismaService.$executeRaw(Prisma.sql([DataMigrationQuery]));
+
+      this.logger.log('Completed cron job for History DM Reporting API');
+      this.logger.log(`Fetched ${response.data.length} entries successfully`);
+      return response.data;
     } catch (error) {
-      this.logger.debug(error)
-      this.logger.error('Failed to fetch data from DM Reporting API');
+      this.logger.debug(error);
+      this.logger.error('Failed to fetch data from DM Reporting(History) API');
     }
   }
 
   async findAll(
-    page: number = 1,
-    pageSize: number = 10,
-  ): Promise<PaginationResponse<DMReportingEntity>> {
-    const query = this.externalAPIRepostitory.createQueryBuilder();
+    page = 1,
+    pageSize = 10,
+    fromDate: string = null,
+    toDate: string = null,
+  ): Promise<PaginationResponse<DmReporting>> {
+    const skip = (page - 1) * pageSize;
+    const take: number = +pageSize;
+    let where: any = {};
 
-    query.offset((page - 1) * pageSize).limit(pageSize);
+    if (fromDate !== null && toDate !== null) {
+      const fromQueryDate = new Date(fromDate)
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
 
-    const [items, totalItems] = await query.getResultAndCount();
+      const toQueryDate = new Date(toDate);
+      toQueryDate.setUTCHours(23, 59, 59);
+
+      const formattedToDate = toQueryDate
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      where = {
+        ...where,
+        start_time: {
+          gte: new Date(fromQueryDate),
+          lte: new Date(formattedToDate),
+        },
+      };
+    }
+
+    const items = await this.prismaService.dmReporting.findMany({
+      skip,
+      take,
+      where,
+      orderBy: {
+        start_time: 'desc',
+      },
+    });
+    const totalItems = await this.prismaService.dmReportingHistory.count();
 
     return this.paginationService.getPaginationData(
       page,
