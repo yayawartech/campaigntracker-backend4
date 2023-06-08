@@ -1,29 +1,25 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { AdSetsService } from './facebook/ad-sets/ad_sets.service';
+import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { DMReportingService } from './external/dm-reporting/dm_reporting.service';
-import { AdSetsService } from './facebook/ad-sets/ad_sets.service';
 
 @Injectable()
 export class TrackerCronJob {
   constructor(
     private readonly extAPIService: DMReportingService,
-
+    private readonly dmReportingCronService: DMReportingService,
     private readonly adSetsService: AdSetsService,
-    private readonly logger: Logger,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron(): Promise<any> {
-    
-    const startDate = '2023-05-21T00:00:00';
-    const endDate = '2023-05-21T00:00:00';
-    this.extAPIService.fetchExternalApiData(
-      startDate,
-      endDate,
-    );
+    const startDate = new Date().toISOString().substring(0, 10);
+    const endDate = new Date().toISOString().substring(0, 10);
+    await this.extAPIService.fetchExternalApiData(startDate, endDate);
+  }
 
-    
-    this.adSetsService.fetchAdSetsDataFromApi();
-    
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  async adSetsCron(): Promise<void> {
+    await this.adSetsService.fetchAdSetsDataFromApi();
   }
 }

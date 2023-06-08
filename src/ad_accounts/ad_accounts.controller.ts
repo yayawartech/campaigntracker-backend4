@@ -21,22 +21,21 @@ export class AdAccountsController {
   }
 
   @Get()
-  async getAllAdaccounts(
+  async getAllAdAccounts(
     @Query('page') page: number,
     @Query('pageSize') pageSize: number,
   ) {
-    const resp = await this.adAccountsService.findAllAdAccounts(page, pageSize);
-    return resp;
+    return await this.adAccountsService.findAllAdAccounts(page, pageSize);
   }
 
   @Get(':id')
   async findAdAccount(@Param('id') id: string) {
-    return this.adAccountsService.findAdAccount(id);
+    return this.adAccountsService.findAdAccount(+id);
   }
 
   @Delete(':id')
   async deleteAdAccount(@Param('id') id: string) {
-    return this.adAccountsService.deleteAdAccount(id);
+    return this.adAccountsService.deleteAdAccount(+id);
   }
 
   @Put(':id')
@@ -44,6 +43,6 @@ export class AdAccountsController {
     @Body() adAccountData: AdAccountDto,
     @Param('id') id: string,
   ) {
-    return this.adAccountsService.updateAdAccount(id, adAccountData);
+    return this.adAccountsService.updateAdAccount(+id, adAccountData);
   }
 }
