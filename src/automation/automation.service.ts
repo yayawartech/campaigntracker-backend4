@@ -3,6 +3,7 @@ import { Automation, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
+import { Row } from './Row';
 
 @Injectable()
 export class AutomationService {
@@ -12,13 +13,55 @@ export class AutomationService {
   ) {}
 
   async storeAutomation(createAutomationDto: CreateAutomationDto) {
-    const jsonRules = JSON.stringify(createAutomationDto.data);
+    const formattedRowsPromises = await createAutomationDto.data.map((data) => {
+      return this.formatData(data);
+    });
+    const formattedRows = await Promise.all(formattedRowsPromises);
+    //console.log(formattedRows);
+    const jsonRules = JSON.stringify(formattedRows);
     const automationData = await this.prisma.automation.create({
       data: {
         rules: jsonRules,
       },
     });
     return automationData;
+  }
+
+  async formatData(data) {
+    let display_text: string = '';
+    if ('params' in data && data['params']) {
+      display_text += data.params + ' ';
+    }
+    if ('daysAgo' in data && data['daysAgo']) {
+      display_text += data.daysAgo + ' days ';
+    }
+    if ('operand' in data && data['operand']) {
+      display_text += data.operand + ' ';
+    }
+    if ('daysValue' in data && data['daysValue']) {
+      display_text += data.daysValue + ' days ';
+    }
+
+    if ('value' in data && data['value']) {
+      display_text += data.value + ' ';
+    }
+    // if ('types' in data && data['types']) {
+    //   display_text += data.types + ' ';
+    // }
+
+    if ('daysValue' in data && data['daysValue']) {
+      display_text += data.days + ' ';
+    }
+    if ('dolorValue' in data && data['dolorValue']) {
+      display_text += data.dolorValue + ' ';
+    }
+    if ('daysAgoValue' in data && data['daysAgoValue']) {
+      display_text += data.daysAgoValue + ' days ago ';
+    }
+    if ('percentValue' in data && data['percentValue']) {
+      display_text += data.percentValue + '%';
+    }
+    return { ...data, display_text: display_text };
   }
 
   async getAllAutomations(
@@ -63,9 +106,12 @@ export class AutomationService {
         HttpStatus.NOT_FOUND,
       );
     }
+    const jsonRules = JSON.stringify(createAutomationDto.data);
     const automation = await this.prisma.automation.update({
       where: { id },
-      data: createAutomationDto,
+      data: {
+        rules: jsonRules,
+      },
     });
     return {
       message: 'Ad account updated successfully',

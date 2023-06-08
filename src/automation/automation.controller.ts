@@ -42,6 +42,7 @@ export class AutomationController {
       +id,
       createAutomationDto,
     );
+    return data;
   }
   @Delete(':id')
   async deleteData(@Param('id') id: string) {
