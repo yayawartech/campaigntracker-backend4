@@ -76,13 +76,44 @@ export class AdSetsService {
   async getAdSetsData(
     page = 1,
     pageSize = 10,
+    fromDate: string = null,
+    toDate: string = null
   ): Promise<PaginationResponse<AdSets>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
 
+    let where: any = {};
+
+    if (fromDate !== null && toDate !== null) {
+      const fromQueryDate = new Date(fromDate)
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      const toQueryDate = new Date(toDate);
+      toQueryDate.setUTCHours(23, 59, 59);
+
+      const formattedToDate = toQueryDate
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      where = {
+        ...where,
+        start_time: {
+          gte: new Date(fromQueryDate),
+          lte: new Date(formattedToDate),
+        },
+      };
+    }
+
     const adSets = await this.prisma.adSets.findMany({
       skip,
       take,
+      where,
+      orderBy: {
+        start_time: 'desc',
+      },
     });
     const totalItems = await this.prisma.adSets.count(); // Count total number of items
     return this.paginationService.getPaginationData(
