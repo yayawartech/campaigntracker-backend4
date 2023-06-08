@@ -21,12 +21,11 @@ export class AdAccountsController {
   }
 
   @Get()
-  async getAllAdaccounts(
+  async getAllAdAccounts(
     @Query('page') page: number,
     @Query('pageSize') pageSize: number,
   ) {
-    const resp = await this.adAccountsService.findAllAdAccounts(page, pageSize);
-    return resp;
+    return await this.adAccountsService.findAllAdAccounts(page, pageSize);
   }
 
   @Get(':id')
