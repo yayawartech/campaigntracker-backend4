@@ -9,8 +9,10 @@ export class AdSetsController {
   async getAdSetsData(
     @Query('page') page: number,
     @Query('pageSize') pageSize: number,
+    @Query('fromDate') fromDate: string,
+    @Query('toDate') toDate: string,
   ): Promise<PaginationResponse<AdSets>> {
-    const resp = await this.adSetsService.getAdSetsData(page, pageSize);
+    const resp = await this.adSetsService.getAdSetsData(page, pageSize,fromDate,toDate);
     return resp;
   }
 }
