@@ -116,7 +116,7 @@ export class DMReportingService {
         start_time: 'desc',
       },
     });
-    const totalItems = await this.prismaService.dmReportingHistory.count();
+    const totalItems = await this.prismaService.dmReporting.count();
 
     return this.paginationService.getPaginationData(
       page,
