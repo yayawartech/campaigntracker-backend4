@@ -31,7 +31,8 @@ export class AdAccountsService {
 
     const ad_account = await this.prisma.adAccount.create({
       data: {
-        source: source,
+        // TODO: Fix this from frontend/backend
+        source: "facebooks",
         accountId: accountId,
         name: name,
         timeZone: timeZone,
