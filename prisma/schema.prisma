@@ -98,7 +98,7 @@ model DmReporting{
 
 model Automation{
   id Int      @id @default(autoincrement())
-  rules String?
+  rules String? @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
