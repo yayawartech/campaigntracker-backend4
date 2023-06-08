@@ -32,7 +32,7 @@ model AdAccount{
 model AdSetsHistory{
   id Int      @id @default(autoincrement())
   status String
-  facebook_id String
+  adset_id String
   adaccount_id String
   name String
   daily_budget String
@@ -44,7 +44,7 @@ model AdSetsHistory{
 model AdSets{
   id Int      @id @default(autoincrement())
   status String
-  facebook_id String
+  adset_id String  @unique
   adaccount_id String
   name String
   daily_budget String
@@ -59,11 +59,10 @@ model DmReportingHistory{
   domain String
   manager String?
   buyer String 
-  date String
-  hour Int
+  start_time DateTime
   campaign String
   adset String?
-  adsetid Int?
+  adset_id String?
   revenue Float
   spend Float 
   link_clicks Int
@@ -81,11 +80,10 @@ model DmReporting{
   domain String
   manager String?
   buyer String 
-  date String
-  hour Int
+  start_time DateTime
   campaign String
   adset String?
-  adsetid Int?
+  adset_id String?
   revenue Float
   spend Float 
   link_clicks Int
@@ -94,6 +92,7 @@ model DmReporting{
   searches Int
   clicks Int
   tq Int
+  @@unique([start_time, adset_id])
 }
 
 
