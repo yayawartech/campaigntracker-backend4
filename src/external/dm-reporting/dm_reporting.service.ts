@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
-import { DmReporting, DmReportingHistory } from '@prisma/client';
+import { DmReporting, DmReportingHistory, Prisma } from '@prisma/client';
 import {
   DM_REPORTING_ACCESS_KEY,
   DM_REPORTING_ACCESS_TOKEN,
@@ -8,6 +8,7 @@ import {
 } from 'src/config';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DataMigrationQuery } from './query';
 
 @Injectable()
 export class DMReportingService {
@@ -18,36 +19,34 @@ export class DMReportingService {
   ) {}
 
   async fetchExternalApiData(startDate: string, endDate: string): Promise<any> {
-    const url =
-      DM_REPORTING_URL +
-      '&key=' +
-      DM_REPORTING_ACCESS_KEY +
-      '&token=' +
-      DM_REPORTING_ACCESS_TOKEN +
-      '&startDate=' +
-      startDate +
-      '&endDate=' +
-      endDate;
+    const params = new URLSearchParams();
+    params.append('aff', 'hudson interactive');
+    params.append('key', DM_REPORTING_ACCESS_KEY);
+    params.append('token', DM_REPORTING_ACCESS_TOKEN);
+    params.append('startDate', startDate);
+    params.append('endDate', endDate);
 
+    const url = DM_REPORTING_URL + params.toString();
     try {
-      this.logger.log('Started cron job for DM Reporting API');
+      this.logger.log('Started cron job for History DM Reporting API');
       const response: AxiosResponse = await axios.get(url);
       if (response) {
         const dataToInsert: DmReportingHistory[] = response.data.map(
           (record) => {
             const manager = record.Manager || null;
+            const recordDate =
+              record.Date.substring(0, 10) + ' ' + record.Hour + ':00:00';
             const createdRecords = this.prismaService.dmReportingHistory.create(
               {
                 data: {
+                  campaign: '',
                   advertiser: record.Advertiser,
                   domain: record.Domain,
                   manager: manager,
                   buyer: record.Buyer,
-                  date: record.Date,
-                  hour: record.Hour,
-                  campaign: record.Campaign,
-                  adset: record.Adset,
-                  adsetid: record.AdsetId,
+                  start_time: new Date(recordDate),
+                  adset: record.Adset_name,
+                  adset_id: record.Adset_Id,
                   revenue: record.Revenue,
                   spend: record.Spend,
                   link_clicks: record.Link_Clicks,
@@ -62,64 +61,23 @@ export class DMReportingService {
             return createdRecords;
           },
         );
-        const createdDmReporting = await Promise.all(dataToInsert);
+        await Promise.all(dataToInsert);
       }
 
-      this.logger.log('Completed cron job for DM Reporting API');
+      await this.prismaService.$executeRaw(Prisma.sql([DataMigrationQuery]));
+
+      this.logger.log('Completed cron job for History DM Reporting API');
       this.logger.log(`Fetched ${response.data.length} entries successfully`);
       return response.data;
     } catch (error) {
       this.logger.debug(error);
-      this.logger.error('Failed to fetch data from DM Reporting API');
-    }
-  }
-
-  async DmReportingCronJob(): Promise<void> {
-    try {
-      const data = await this.prismaService.dmReportingHistory.findMany({
-        take: 10,
-      });
-      const insertData = await Promise.all(
-        data.map(async (record) => {
-          try {
-            const latestData = await this.prismaService.dmReporting.create({
-              data: {
-                advertiser: record.advertiser,
-                domain: record.domain,
-                manager: record.manager,
-                buyer: record.buyer,
-                date: record.date,
-                hour: record.hour,
-                campaign: record.campaign,
-                adset: record.adset,
-                adsetid: record.adsetid,
-                revenue: record.revenue,
-                spend: record.spend,
-                link_clicks: record.link_clicks,
-                ad_clicks: record.ad_clicks,
-                gp: record.gp,
-                searches: record.searches,
-                clicks: record.clicks,
-                tq: record.tq,
-              },
-            });
-            this.logger.log('Latest DmReporting Data Inserted');
-            return latestData;
-          } catch (error) {
-            this.logger.error('Error inserting record:', error);
-            return null;
-          }
-        }),
-      );
-      this.logger.log('Inserted records:');
-    } catch (error) {
-      this.logger.error('Error fetching data:', error);
+      this.logger.error('Failed to fetch data from DM Reporting(History) API');
     }
   }
 
   async findAll(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     fromDate: string = null,
     toDate: string = null,
   ): Promise<PaginationResponse<DmReporting>> {
@@ -127,7 +85,6 @@ export class DMReportingService {
     const take: number = +pageSize;
     let where: any = {};
 
-    // From and To query manipulation
     if (fromDate !== null && toDate !== null) {
       const fromQueryDate = new Date(fromDate)
         .toISOString()
@@ -144,9 +101,9 @@ export class DMReportingService {
 
       where = {
         ...where,
-        date: {
-          gte: fromQueryDate,
-          lte: formattedToDate,
+        start_time: {
+          gte: new Date(fromQueryDate),
+          lte: new Date(formattedToDate),
         },
       };
     }
@@ -155,8 +112,11 @@ export class DMReportingService {
       skip,
       take,
       where,
+      orderBy: {
+        start_time: 'desc',
+      },
     });
-    const totalItems = await this.prismaService.dmReportingHistory.count();
+    const totalItems = await this.prismaService.dmReporting.count();
 
     return this.paginationService.getPaginationData(
       page,

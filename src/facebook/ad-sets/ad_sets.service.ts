@@ -3,9 +3,11 @@ import { AdAccountsService } from 'src/ad_accounts/ad_accounts.service';
 import { FACEBOOK_ACCESS_TOKEN, FACEBOOK_API_URL } from 'src/config';
 import axios, { AxiosResponse } from 'axios';
 import { PaginationService } from 'src/pagination/pagination.service';
-import { AdSets, AdSetsHistory } from '@prisma/client';
+import { AdSets, AdSetsHistory, Prisma } from '@prisma/client';
 
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DataMigrationQuery } from '../../external/dm-reporting/query';
+import { SyncQuery } from './query';
 
 @Injectable()
 export class AdSetsService {
@@ -17,10 +19,8 @@ export class AdSetsService {
     private readonly paginationService: PaginationService<AdSetsHistory>,
     private prisma: PrismaService,
   ) {}
-  //Adsets History
   async fetchAdSetsDataFromApi(): Promise<any> {
     const adAccountData = await this.adAccountService.findAllAccounts();
-    let accountId = null;
 
     if (adAccountData) {
       adAccountData.map(async (adAccount) => {
@@ -29,7 +29,7 @@ export class AdSetsService {
           FACEBOOK_API_URL +
           'act_' +
           accountId +
-          '/adsets?fields=status,name,daily_budget,created_time,start_time&access_token=' +
+          '/adsets?fields=status,name,daily_budget,created_time,start_time&limit=400&access_token=' +
           FACEBOOK_ACCESS_TOKEN;
 
         try {
@@ -41,7 +41,7 @@ export class AdSetsService {
                 const adSetDataHistory = await this.prisma.adSetsHistory.create(
                   {
                     data: {
-                      facebook_id: record.id,
+                      adset_id: record.id,
                       status: record.status,
                       name: record.name,
                       daily_budget: record.daily_budget,
@@ -54,10 +54,10 @@ export class AdSetsService {
                 return adSetDataHistory;
               },
             );
-            const createdAdSets = await Promise.all(promises);
+            await Promise.all(promises);
 
             this.logger.log(
-              `Fetched ${response.data.data.length} facebook entries succesfully`,
+              `Fetched ${response.data.data.length} facebook entries successfully`,
             );
             this.logger.log(
               'Completed cron job for Facebook AdSetsHistory API',
@@ -65,57 +65,55 @@ export class AdSetsService {
           }
         } catch (error) {
           this.logger.debug(error);
-          this.logger.error('Failed to fetch data from Facebook API');
+          this.logger.error('Failed to fetch data from Facebook API(History)');
         }
       });
-    }
-  }
 
-  //Adsets latest Data
-
-  async AdSetsCronJob(): Promise<void> {
-    try {
-      this.logger.log('Started cron job for Facebook AdSetsLatest Data');
-      const data = await this.prisma.adSetsHistory.findMany({
-        take: 10,
-      });
-      const InsertedData: AdSets[] = await Promise.all(
-        data.map(async (record) => {
-          try {
-            const InsertData = await this.prisma.adSets.create({
-              data: {
-                facebook_id: record.facebook_id,
-                status: record.status,
-                name: record.name,
-                daily_budget: record.daily_budget,
-                created_time: record.created_time,
-                start_time: record.start_time,
-                adaccount_id: record.adaccount_id,
-              },
-            });
-            this.logger.log('Latest AdSets Data Inserted');
-            return InsertData;
-          } catch (error) {
-            this.logger.error('Error inserting record:', error);
-            return null;
-          }
-        }),
-      );
-    } catch (error) {
-      this.logger.error('Error fetching data:', error);
+      await this.prisma.$executeRaw(Prisma.sql([SyncQuery]));
     }
   }
 
   async getAdSetsData(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
+    fromDate: string = null,
+    toDate: string = null
   ): Promise<PaginationResponse<AdSets>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
 
+    let where: any = {};
+
+    if (fromDate !== null && toDate !== null) {
+      const fromQueryDate = new Date(fromDate)
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      const toQueryDate = new Date(toDate);
+      toQueryDate.setUTCHours(23, 59, 59);
+
+      const formattedToDate = toQueryDate
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      where = {
+        ...where,
+        start_time: {
+          gte: new Date(fromQueryDate),
+          lte: new Date(formattedToDate),
+        },
+      };
+    }
+
     const adSets = await this.prisma.adSets.findMany({
       skip,
       take,
+      where,
+      orderBy: {
+        start_time: 'desc',
+      },
     });
     const totalItems = await this.prisma.adSets.count(); // Count total number of items
     return this.paginationService.getPaginationData(
