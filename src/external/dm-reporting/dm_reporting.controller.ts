@@ -1,13 +1,12 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
 import { DMReportingService } from './dm_reporting.service';
-import { DmReporting, DmReportingHistory } from '@prisma/client';
+import { DmReporting } from '@prisma/client';
 //@UseGuards(CustomCookieGuard)
 @Controller('campaigns')
 export class DMReportingController {
-  constructor(private readonly extAPIService: DMReportingService) {}
+  constructor(private readonly dmReportingService: DMReportingService) {}
 
-  // Controller methods here
   @Get()
   async fetchExternalApiData(
     @Query('page') page: number,
@@ -15,7 +14,7 @@ export class DMReportingController {
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
   ): Promise<PaginationResponse<DmReporting>> {
-    const resp = await this.extAPIService.findAll(
+    const resp = await this.dmReportingService.findAll(
       page,
       pageSize,
       fromDate,

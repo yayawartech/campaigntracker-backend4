@@ -11,21 +11,15 @@ export class TrackerCronJob {
     private readonly adSetsService: AdSetsService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron(): Promise<any> {
-    const startDate = '2023-06-05T00:00:00';
-    const endDate = '2023-06-05T00:00:00';
-    this.extAPIService.fetchExternalApiData(startDate, endDate);
-    this.adSetsService.fetchAdSetsDataFromApi();
+    const startDate = new Date().toISOString().substring(0, 10);
+    const endDate = new Date().toISOString().substring(0, 10);
+    await this.extAPIService.fetchExternalApiData(startDate, endDate);
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
-  async dmReportingCron(): Promise<void> {
-    await this.dmReportingCronService.DmReportingCronJob();
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async adSetsCron(): Promise<void> {
-    await this.adSetsService.AdSetsCronJob();
+    await this.adSetsService.fetchAdSetsDataFromApi();
   }
 }
