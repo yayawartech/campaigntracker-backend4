@@ -77,7 +77,7 @@ export class AdSetsService {
     page = 1,
     pageSize = 10,
     fromDate: string = null,
-    toDate: string = null
+    toDate: string = null,
   ): Promise<PaginationResponse<AdSets>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
