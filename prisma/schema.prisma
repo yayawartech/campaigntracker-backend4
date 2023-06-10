@@ -95,4 +95,11 @@ model DmReporting{
   @@unique([start_time, adset_id])
 }
 
+model Automation{
+  id Int      @id @default(autoincrement())
+  rules String? @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 
