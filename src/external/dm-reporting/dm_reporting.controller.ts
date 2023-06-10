@@ -1,9 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Query } from '@nestjs/common';
 
 import { DMReportingService } from './dm_reporting.service';
 import { DmReporting } from '@prisma/client';
+import { AuthGuard } from '@nestjs/passport';
 //@UseGuards(CustomCookieGuard)
 @Controller('campaigns')
+@UseGuards(AuthGuard('jwt'))
 export class DMReportingController {
   constructor(private readonly dmReportingService: DMReportingService) {}
 
