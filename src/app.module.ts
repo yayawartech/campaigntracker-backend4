@@ -12,6 +12,7 @@ import { PaginationModule } from './pagination/pagination.module';
 import { AdSetsModule } from './facebook/ad-sets/ad_sets.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
+import { AutomationModule } from './automation/automation.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PrismaService } from './prisma/prisma.service';
     PaginationModule,
     AdSetsModule,
     PrismaModule,
+    AutomationModule
   ],
   controllers: [AppController],
   providers: [AppService, TrackerCronJob, Logger, PrismaService],
