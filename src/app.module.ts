@@ -25,7 +25,7 @@ import { AutomationModule } from './automation/automation.module';
     PaginationModule,
     AdSetsModule,
     PrismaModule,
-    AutomationModule
+    AutomationModule,
   ],
   controllers: [AppController],
   providers: [AppService, TrackerCronJob, Logger, PrismaService],
