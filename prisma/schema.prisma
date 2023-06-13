@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -11,95 +9,107 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email      String   @unique
-  name       String?
-  password   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model AdAccount{
-  id          Int      @id @default(autoincrement())
-  source     String
-  accountId  String
-  name   String?
-  timeZone String
-  status String
-  updatedAt   DateTime @updatedAt
+model AdAccount {
+  id        Int      @id @default(autoincrement())
+  source    String
+  accountId String
+  name      String?
+  timeZone  String
+  status    String
+  updatedAt DateTime @updatedAt
 }
 
-model AdSetsHistory{
-  id Int      @id @default(autoincrement())
-  status String
-  adset_id String
+model AdSetsHistory {
+  id           Int      @id @default(autoincrement())
+  status       String
   adaccount_id String
-  name String
-  daily_budget String
-  created_time String
-  start_time String
-  createdAt   DateTime @default(now())
-
+  name         String
+  daily_budget Int
+  created_time DateTime
+  start_time   DateTime
+  createdAt    DateTime @default(now())
+  adset_id     String
 }
-model AdSets{
-  id Int      @id @default(autoincrement())
-  status String
-  adset_id String  @unique
+
+model AdSets {
+  id           Int      @id @default(autoincrement())
+  status       String
   adaccount_id String
-  name String
-  daily_budget String
-  created_time String
-  start_time String
-  createdAt   DateTime @default(now())
+  name         String
+  daily_budget Int
+  created_time DateTime
+  start_time   DateTime
+  createdAt    DateTime @default(now())
+  adset_id     String   @unique
 }
 
-model DmReportingHistory{
-  id Int      @id @default(autoincrement())
-  advertiser String
-  domain String
-  manager String?
-  buyer String 
-  start_time DateTime
-  campaign String
-  adset String?
-  adset_id String?
-  revenue Float
-  spend Float 
+model DmReportingHistory {
+  id          Int      @id @default(autoincrement())
+  advertiser  String
+  domain      String
+  manager     String?
+  buyer       String
+  campaign    String
+  adset       String?
+  revenue     Float
+  spend       Float
   link_clicks Int
-  ad_clicks Int
-  gp Float
-  searches Int
-  clicks Int
-  tq Int
+  ad_clicks   Int
+  gp          Float
+  searches    Int
+  clicks      Int
+  tq          Int
+  start_time  DateTime
+  adset_id    String?
 }
 
-
-model DmReporting{
-  id Int      @id @default(autoincrement())
-  advertiser String
-  domain String
-  manager String?
-  buyer String 
-  start_time DateTime
-  campaign String
-  adset String?
-  adset_id String?
-  revenue Float
-  spend Float 
+model DmReporting {
+  id          Int      @id @default(autoincrement())
+  advertiser  String
+  domain      String
+  manager     String?
+  buyer       String
+  campaign    String
+  adset       String?
+  revenue     Float
+  spend       Float
   link_clicks Int
-  ad_clicks Int
-  gp Float
-  searches Int
-  clicks Int
-  tq Int
+  ad_clicks   Int
+  gp          Float
+  searches    Int
+  clicks      Int
+  tq          Int
+  start_time  DateTime
+  adset_id    String?
+
   @@unique([start_time, adset_id])
 }
 
-model Automation{
-  id Int      @id @default(autoincrement())
-  rules String? @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Automation {
+  id        Int      @id @default(autoincrement())
+  rules     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+view v_spendreport {
+  reportDate   DateTime @db.Date
+  adset_id     String
+  adCost       Float?
+  revenue      Float?
+  profit       Float?
+  margin       Float?
+  clicks       Decimal?  @db.Decimal(32, 0)
+  daily_budget Int?
+  daysPassed   Int?
 
+  @@id([reportDate, adset_id])
+}

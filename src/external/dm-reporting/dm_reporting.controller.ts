@@ -1,7 +1,7 @@
 import { Controller, Get, Param, UseGuards, Query } from '@nestjs/common';
 
 import { DMReportingService } from './dm_reporting.service';
-import { DmReporting } from '@prisma/client';
+import { DmReporting, v_spendreport } from '@prisma/client';
 import { AuthGuard } from '@nestjs/passport';
 //@UseGuards(CustomCookieGuard)
 @Controller('campaigns')
@@ -17,6 +17,22 @@ export class DMReportingController {
     @Query('toDate') toDate: string,
   ): Promise<PaginationResponse<DmReporting>> {
     const resp = await this.dmReportingService.findAll(
+      page,
+      pageSize,
+      fromDate,
+      toDate,
+    );
+    return resp;
+  }
+
+  @Get('/spend-report')
+  async fetchReport(
+    @Query('page') page: number,
+    @Query('pageSize') pageSize: number,
+    @Query('fromDate') fromDate: string,
+    @Query('toDate') toDate: string,
+  ): Promise<PaginationResponse<v_spendreport>> {
+    const resp = await this.dmReportingService.fetchSpendReport(
       page,
       pageSize,
       fromDate,

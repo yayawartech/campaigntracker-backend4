@@ -13,8 +13,10 @@ export class TrackerCronJob {
 
   @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron(): Promise<any> {
-    const startDate = new Date().toISOString().substring(0, 10);
-    const endDate = new Date().toISOString().substring(0, 10);
+    const startDate = '2023-06-01';
+    const endDate = '2023-06-11';
+    // const startDate = new Date().toISOString().substring(0, 10);
+    // const endDate = new Date().toISOString().substring(0, 10);
     await this.extAPIService.fetchExternalApiData(startDate, endDate);
   }
 

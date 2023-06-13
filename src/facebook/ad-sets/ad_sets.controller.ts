@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 export class AdSetsController {
   constructor(private readonly adSetsService: AdSetsService) {}
+
   @Get()
   async getAdSetsData(
     @Query('page') page: number,

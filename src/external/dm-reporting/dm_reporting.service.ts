@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
-import { DmReporting, DmReportingHistory, Prisma } from '@prisma/client';
+import {
+  DmReporting,
+  v_spendreport,
+  DmReportingHistory,
+  Prisma,
+} from '@prisma/client';
 import {
   DM_REPORTING_ACCESS_KEY,
   DM_REPORTING_ACCESS_TOKEN,
@@ -15,6 +20,8 @@ export class DMReportingService {
   constructor(
     private prismaService: PrismaService,
     private readonly paginationService: PaginationService<DmReportingHistory>,
+
+    private readonly spendReportService: PaginationService<v_spendreport>,
     private readonly logger: Logger,
   ) {}
 
@@ -119,6 +126,29 @@ export class DMReportingService {
     const totalItems = await this.prismaService.dmReporting.count();
 
     return this.paginationService.getPaginationData(
+      page,
+      pageSize,
+      items,
+      totalItems,
+    );
+  }
+
+  async fetchSpendReport(
+    page = 1,
+    pageSize = 10,
+    fromDate: string = null,
+    toDate: string = null,
+  ): Promise<PaginationResponse<v_spendreport>> {
+    const skip = (page - 1) * pageSize;
+    const take: number = +pageSize;
+
+    const items = await this.prismaService.v_spendreport.findMany({
+      skip,
+      take,
+    });
+    const totalItems = await this.prismaService.v_spendreport.count();
+
+    return this.spendReportService.getPaginationData(
       page,
       pageSize,
       items,
