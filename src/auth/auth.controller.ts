@@ -27,6 +27,8 @@ export class AuthController {
         .cookie('token', response.token, {
           expires: new Date(Date.now() + days_90),
           httpOnly: true,
+          secure: true,
+          domain: 'app.jarvis-opt.com',
         })
         .json({
           success: true,
