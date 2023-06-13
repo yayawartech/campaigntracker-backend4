@@ -1,10 +1,13 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AdSetsService } from './ad_sets.service';
 import { AdSets } from '@prisma/client';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('ad-sets')
+@UseGuards(AuthGuard('jwt'))
 export class AdSetsController {
   constructor(private readonly adSetsService: AdSetsService) {}
+
   @Get()
   async getAdSetsData(
     @Query('page') page: number,
@@ -12,7 +15,12 @@ export class AdSetsController {
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
   ): Promise<PaginationResponse<AdSets>> {
-    const resp = await this.adSetsService.getAdSetsData(page, pageSize,fromDate,toDate);
+    const resp = await this.adSetsService.getAdSetsData(
+      page,
+      pageSize,
+      fromDate,
+      toDate,
+    );
     return resp;
   }
 }

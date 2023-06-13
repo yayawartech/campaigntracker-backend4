@@ -16,14 +16,14 @@ export class AdSetsService {
     private readonly adAccountService: AdAccountsService,
 
     private readonly logger: Logger,
-    private readonly paginationService: PaginationService<AdSetsHistory>,
+    private readonly paginationService: PaginationService<AdSets>,
     private prisma: PrismaService,
   ) {}
   async fetchAdSetsDataFromApi(): Promise<any> {
     const adAccountData = await this.adAccountService.findAllAccounts();
 
     if (adAccountData) {
-      adAccountData.map(async (adAccount) => {
+      const result = adAccountData.map(async (adAccount) => {
         const accountId = adAccount.accountId;
         const url =
           FACEBOOK_API_URL +
@@ -38,15 +38,17 @@ export class AdSetsService {
           if (response) {
             const promises: AdSetsHistory[] = response.data.data.map(
               async (record) => {
+                const startTime = new Date(record.start_time);
+                const createdTime = new Date(record.created_time);
                 const adSetDataHistory = await this.prisma.adSetsHistory.create(
                   {
                     data: {
                       adset_id: record.id,
                       status: record.status,
                       name: record.name,
-                      daily_budget: record.daily_budget,
-                      created_time: record.created_time,
-                      start_time: record.start_time,
+                      daily_budget: Number(record.daily_budget),
+                      created_time: createdTime,
+                      start_time: startTime,
                       adaccount_id: accountId,
                     },
                   },
@@ -68,7 +70,7 @@ export class AdSetsService {
           this.logger.error('Failed to fetch data from Facebook API(History)');
         }
       });
-
+      await Promise.all(result);
       await this.prisma.$executeRaw(Prisma.sql([SyncQuery]));
     }
   }
@@ -77,7 +79,7 @@ export class AdSetsService {
     page = 1,
     pageSize = 10,
     fromDate: string = null,
-    toDate: string = null
+    toDate: string = null,
   ): Promise<PaginationResponse<AdSets>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;

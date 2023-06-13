@@ -6,6 +6,7 @@ import { config } from 'dotenv';
 async function bootstrap() {
   config();
   const app = await NestFactory.create(AppModule);
+  app.use(cookieParser());
   app.enableCors({
     credentials: true,
     origin: true,
