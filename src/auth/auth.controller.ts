@@ -6,10 +6,12 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { UserLoginDto } from './dto/user-login.dto';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
