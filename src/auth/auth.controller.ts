@@ -28,7 +28,7 @@ export class AuthController {
           expires: new Date(Date.now() + days_90),
           httpOnly: true,
           secure: true,
-          domain: 'app.jarvis-opt.com',
+          domain: 'jarvis-opt.com',
         })
         .json({
           success: true,
