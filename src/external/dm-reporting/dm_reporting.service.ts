@@ -138,6 +138,12 @@ export class DMReportingService {
     pageSize = 10,
     fromDate: string = null,
     toDate: string = null,
+    sort:
+      | {
+          id: 'string';
+          desc: string;
+        }
+      | undefined,
   ): Promise<PaginationResponse<v_spendreport>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
@@ -152,13 +158,15 @@ export class DMReportingService {
         },
       };
     }
+    const orderBy: any = {};
+    if (sort !== undefined) {
+      orderBy[sort.id] = sort.desc === 'true' ? 'desc' : 'asc';
+    }
     const items = await this.prismaService.v_spendreport.findMany({
       skip,
       take,
       where,
-      orderBy: {
-        reportDate: 'desc',
-      },
+      orderBy: orderBy,
     });
     const totalItems = await this.prismaService.v_spendreport.count();
 
