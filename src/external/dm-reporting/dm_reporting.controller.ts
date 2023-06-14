@@ -31,12 +31,22 @@ export class DMReportingController {
     @Query('pageSize') pageSize: number,
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
+    @Query('adsetId') adsetId: string,
+    @Query('sort')
+    sort:
+      | {
+          id: 'string';
+          desc: string;
+        }
+      | undefined,
   ): Promise<PaginationResponse<v_spendreport>> {
     const resp = await this.dmReportingService.fetchSpendReport(
       page,
       pageSize,
       fromDate,
       toDate,
+      sort,
+      adsetId,
     );
     return resp;
   }
