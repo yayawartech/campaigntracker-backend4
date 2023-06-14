@@ -31,6 +31,7 @@ export class DMReportingController {
     @Query('pageSize') pageSize: number,
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
+    @Query('adsetId') adsetId: string,
     @Query('sort')
     sort:
       | {
@@ -45,6 +46,7 @@ export class DMReportingController {
       fromDate,
       toDate,
       sort,
+      adsetId,
     );
     return resp;
   }
