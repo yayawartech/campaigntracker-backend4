@@ -144,6 +144,7 @@ export class DMReportingService {
           desc: string;
         }
       | undefined,
+    adsetId: string,
   ): Promise<PaginationResponse<v_spendreport>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
@@ -155,6 +156,14 @@ export class DMReportingService {
         reportDate: {
           gte: new Date(fromDate),
           lte: new Date(toDate),
+        },
+      };
+    }
+    if (adsetId !== '') {
+      where = {
+        ...where,
+        adset_id: {
+          equals: adsetId,
         },
       };
     }
