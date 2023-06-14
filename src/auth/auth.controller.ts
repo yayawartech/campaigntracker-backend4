@@ -12,6 +12,7 @@ import { UserLoginDto } from './dto/user-login.dto';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { COOKIE_DOMAIN } from '../config';
 
 @Controller('auth')
 export class AuthController {
@@ -28,7 +29,7 @@ export class AuthController {
           expires: new Date(Date.now() + days_90),
           httpOnly: true,
           secure: true,
-          domain: 'jarvis-opt.com',
+          domain: COOKIE_DOMAIN,
         })
         .json({
           success: true,
