@@ -17,11 +17,16 @@ export class AutomationService {
       return this.formatData(data);
     });
     const formattedRows = await Promise.all(formattedRowsPromises);
-    //console.log(formattedRows);
+
     const jsonRules = JSON.stringify(formattedRows);
     const automationData = await this.prisma.automation.create({
       data: {
         rules: jsonRules,
+        name: createAutomationDto.name,
+        automationInMinutes: createAutomationDto.automationInMinutes,
+        budgetType: createAutomationDto.budgetType,
+        options: createAutomationDto.options,
+        status: createAutomationDto.status,
       },
     });
     return automationData;
@@ -29,8 +34,8 @@ export class AutomationService {
 
   async formatData(data) {
     let display_text: string = '';
-    if ('params' in data && data['params']) {
-      display_text += data.params + ' ';
+    if ('param' in data && data['param']) {
+      display_text += data.param + ' ';
     }
     if ('daysAgo' in data && data['daysAgo']) {
       display_text += data.daysAgo + ' days ';
@@ -42,26 +47,16 @@ export class AutomationService {
       display_text += data.daysValue + ' days ';
     }
 
-    if ('value' in data && data['value']) {
-      display_text += data.value + ' ';
+    if ('dollarValue' in data && data['dollarValue']) {
+      display_text += data.dollarValue + ' ';
     }
-    // if ('types' in data && data['types']) {
-    //   display_text += data.types + ' ';
-    // }
-
-    if ('daysValue' in data && data['daysValue']) {
-      display_text += data.days + ' ';
-    }
-    if ('dolorValue' in data && data['dolorValue']) {
-      display_text += data.dolorValue + ' ';
-    }
-    if ('daysAgoValue' in data && data['daysAgoValue']) {
-      display_text += data.daysAgoValue + ' days ago ';
+    if ('daysCompareTo' in data && data['daysCompareTo']) {
+      display_text += data.daysCompareTo + ' days ago ';
     }
     if ('percentValue' in data && data['percentValue']) {
       display_text += data.percentValue + '%';
     }
-    return { ...data, display_text: display_text };
+    return { ...data, displayText: display_text };
   }
 
   async getAllAutomations(
@@ -78,6 +73,11 @@ export class AutomationService {
       return {
         id: automation.id,
         rules: JSON.parse(automation.rules),
+        name: automation.name,
+        options: automation.options,
+        budgetType: automation.budgetType,
+        status: automation.status,
+        automationInMinutes: automation.automationInMinutes,
         createdAt: automation.createdAt,
         updatedAt: automation.updatedAt,
       };
@@ -101,20 +101,29 @@ export class AutomationService {
     if (!entityToUpdate) {
       throw new HttpException(
         {
-          message: 'Ad Account not found',
+          message: 'Automation not found',
         },
         HttpStatus.NOT_FOUND,
       );
     }
-    const jsonRules = JSON.stringify(createAutomationDto.data);
+    const formattedRowsPromises = await createAutomationDto.data.map((data) => {
+      return this.formatData(data);
+    });
+    const formattedRows = await Promise.all(formattedRowsPromises);
+    const jsonRules = JSON.stringify(formattedRows);
     const automation = await this.prisma.automation.update({
       where: { id },
       data: {
         rules: jsonRules,
+        name: createAutomationDto.name,
+        automationInMinutes: createAutomationDto.automationInMinutes,
+        budgetType: createAutomationDto.budgetType,
+        options: createAutomationDto.options,
+        status: createAutomationDto.status,
       },
     });
     return {
-      message: 'Ad account updated successfully',
+      message: 'Automation updated successfully',
       data: automation,
     };
   }
@@ -127,7 +136,7 @@ export class AutomationService {
       throw new HttpException(
         {
           message: 'Input Request',
-          errors: { email: 'Add Account not found' },
+          errors: { email: 'Automation not found' },
         },
         HttpStatus.BAD_REQUEST,
       );
