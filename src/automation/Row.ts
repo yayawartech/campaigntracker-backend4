@@ -1,13 +1,12 @@
 export interface Row {
   id: number;
-  params: string;
+  param: string;
   days: string;
-  operand: string;
-  value: string;
-  types: string;
   daysAgo: string;
-  daysAgoValue: string;
-  dolorValue: string;
-  daysValue: string;
+  operand: string;
+  dollarValue: string;
+  type: string;
+  daysCompareTo: string;
   percentValue: string;
+  displayText: string;
 }
