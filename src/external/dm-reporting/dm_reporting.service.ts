@@ -141,10 +141,24 @@ export class DMReportingService {
   ): Promise<PaginationResponse<v_spendreport>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
+    let where: any = {};
 
+    if (fromDate !== null && toDate !== null) {
+      where = {
+        ...where,
+        reportDate: {
+          gte: new Date(fromDate),
+          lte: new Date(toDate),
+        },
+      };
+    }
     const items = await this.prismaService.v_spendreport.findMany({
       skip,
       take,
+      where,
+      orderBy: {
+        reportDate: 'desc',
+      },
     });
     const totalItems = await this.prismaService.v_spendreport.count();
 
