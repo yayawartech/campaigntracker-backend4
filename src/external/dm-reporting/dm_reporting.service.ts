@@ -138,13 +138,44 @@ export class DMReportingService {
     pageSize = 10,
     fromDate: string = null,
     toDate: string = null,
+    sort:
+      | {
+          id: 'string';
+          desc: string;
+        }
+      | undefined,
+    adsetId: string,
   ): Promise<PaginationResponse<v_spendreport>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
+    let where: any = {};
 
+    if (fromDate !== null && toDate !== null) {
+      where = {
+        ...where,
+        reportDate: {
+          gte: new Date(fromDate),
+          lte: new Date(toDate),
+        },
+      };
+    }
+    if (adsetId !== '') {
+      where = {
+        ...where,
+        adset_id: {
+          equals: adsetId,
+        },
+      };
+    }
+    const orderBy: any = {};
+    if (sort !== undefined) {
+      orderBy[sort.id] = sort.desc === 'true' ? 'desc' : 'asc';
+    }
     const items = await this.prismaService.v_spendreport.findMany({
       skip,
       take,
+      where,
+      orderBy: orderBy,
     });
     const totalItems = await this.prismaService.v_spendreport.count();
 
