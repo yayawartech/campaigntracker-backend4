@@ -3,7 +3,7 @@ import { Automation, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
-import { Row } from './Row';
+import { Logger } from '@nestjs/common';
 
 interface Rule {
   id: number;
@@ -31,6 +31,7 @@ export class AutomationService {
   constructor(
     private prisma: PrismaService,
     private readonly paginationService: PaginationService<Automation>,
+    private readonly logger: Logger,
   ) {}
 
   async storeAutomation(createAutomationDto: CreateAutomationDto) {
@@ -172,88 +173,71 @@ export class AutomationService {
     return await this.prisma.automation.findUnique({ where: { id } });
   }
 
+  //GET QUERY FROM DATABASE
+
+  async runAutomation(): Promise<boolean> {
+    this.logger.log('Started Cron Job for RunAutomation');
+    try {
+      const automations = await this.prisma.automation.findMany();
+      const results: boolean[] = [];
+
+      await Promise.all(
+        automations.map((automation) => {
+          const rules = JSON.parse(automation.rules) as Rule[];
+          const query = this.generateQuery(rules);
+
+          if (query) {
+            const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
+            if (Array.isArray(res) && res.length > 1) {
+              results.push(true);
+            } else {
+              results.push(false);
+            }
+          }
+        }),
+      );
+      this.logger.log('End Cron Job for Run Automation');
+      return results.includes(false) ? false : true;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
   // Author: Manjul Bhattarai
   // Service for Query Builder based on automation rules
-  async generateQuery(): Promise<string> {
-
-    const rules: Rule[] = [
-      {
-        id: 1,
-        param: 'adset_age',
-        days: '',
-        operand: '<',
-        types: '',
-        daysAgo: '',
-        daysCompareTo: '10',
-        dollarValue: '',
-        percentValue: '',
-        display_text: 'AdSet Age < 10 days',
-      },
-      {
-        id: 2,
-        param: 'current_budget',
-        operand: '=',
-        types: '',
-        daysAgo: '',
-        daysCompareTo: '',
-        dollarValue: '25',
-        percentValue: '',
-        display_text: 'Current Budget = 25',
-      },
-      {
-        id: 3,
-        param: 'margin',
-        operand: '>',
-        types: 'timeframe',
-        daysAgo: '1',
-        daysCompareTo: '2',
-        dollarValue: '',
-        percentValue: '',
-        display_text: 'Margin 1 days > 5%',
-      },
-      {
-        id: 4,
-        param: 'margin',
-        operand: '>',
-        types: 'timeframe',
-        daysAgo: '1',
-        daysCompareTo: '3',
-        dollarValue: '',
-        percentValue: '',
-        display_text: 'Margin 1 days > 5%',
-      }
-    ];
+  async generateQuery(rules: Rule[]): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(rules);
 
     let query = 'WITH\n';
 
-  const withEntries = Object.values(withList);
-  for (let i = 0; i < withEntries.length; i++) {
-    query += withEntries[i];
-    if (i !== withEntries.length - 1) {
-      query += ',';
+    const withEntries = Object.values(withList);
+    for (let i = 0; i < withEntries.length; i++) {
+      query += withEntries[i];
+      if (i !== withEntries.length - 1) {
+        query += ',';
+      }
+      query += '\n';
     }
-    query += '\n';
-  }
 
-  const select = 'SELECT * FROM AdSets t1\n';
-  query += select;
+    const select = 'SELECT * FROM AdSets t1\n';
+    query += select;
 
-  const joinEntries = Object.values(joinList);
-  for (const entry of joinEntries) {
-    query += entry;
-  }
-
-  let whereClause = 'WHERE\n';
-  for (let i = 0; i < whereList.length; i++) {
-    if (i === 0) {
-      whereClause += whereList[i] + '\n';
-    } else {
-      whereClause += 'AND ' + whereList[i] + '\n';
+    const joinEntries = Object.values(joinList);
+    for (const entry of joinEntries) {
+      query += entry;
     }
-  }
 
-    query += whereClause;
+    let whereClause = 'WHERE\n';
+    for (let i = 0; i < whereList.length; i++) {
+      if (i === 0) {
+        whereClause += whereList[i] + '\n';
+      } else {
+        whereClause += 'AND ' + whereList[i] + '\n';
+      }
+    }
+
+    query += whereClause + ';';
+
     return query;
   }
 
@@ -261,14 +245,14 @@ export class AutomationService {
     const whereList: string[] = [];
     const joinList: JoinList = {};
     const withList: WithList = {};
-  
+
     for (const rule of rules) {
       const param = rule.param;
-  
+
       if (param === 'current_budget') {
         const operand = rule.operand;
         const value = rule.dollarValue;
-        const condition = `t1.${param}`;
+        const condition = `t1.daily_budget`;
         whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'adset_age') {
         const operand = rule.operand;
@@ -282,7 +266,7 @@ export class AutomationService {
         const daysCompareTo = rule.daysCompareTo;
         const percentValue = rule.percentValue;
         const dollarValue = rule.dollarValue;
-  
+
         const days: string[] = [];
         if (types === 'timeframe') {
           days.push(daysAgo);
@@ -290,7 +274,7 @@ export class AutomationService {
         } else {
           days.push(daysAgo);
         }
-  
+
         const conditions: string[] = [];
         for (const day of days) {
           const [alias, withQuery] = this.generateWith(param, day);
@@ -298,7 +282,7 @@ export class AutomationService {
           joinList[alias] = this.generateJoin(alias);
           if (types === 'number') {
             let condition = `${alias}.${param}`;
-            let value = "";
+            let value = '';
             if (param === 'gross_profit') {
               value = dollarValue;
             } else {
@@ -310,13 +294,15 @@ export class AutomationService {
             conditions.push(condition);
           }
         }
-  
+
         if (types === 'timeframe') {
-          whereList.push(this.generateWhere(conditions[0], operand, conditions[1]));
+          whereList.push(
+            this.generateWhere(conditions[0], operand, conditions[1]),
+          );
         }
       }
     }
-  
+
     return [whereList, joinList, withList];
   }
 
@@ -324,13 +310,13 @@ export class AutomationService {
     const query = `${condition} ${operand} ${value}`;
     return query;
   }
-  
+
   generateWith(param: string, day: string): [string, string] {
     const alias = param + day;
     const withQuery = `\t${alias} AS (SELECT * FROM TestData WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY))`;
     return [alias, withQuery];
   }
-  
+
   generateJoin(alias: string): string {
     const joinQuery = `\tJOIN ${alias} ON t1.adset_id = ${alias}.adset_id\n`;
     return joinQuery;
