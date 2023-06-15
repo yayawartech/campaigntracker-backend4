@@ -49,8 +49,16 @@ export class AutomationController {
     return this.automationService.deleteData(+id);
   }
 
+  // Get JSON for Query Builder
+  @Get('/generate')
+  async generateQuery(){
+    return this.automationService.generateQuery();
+  }
+  
   @Get(':id')
   async findAutomation(@Param('id') id: string) {
     return this.automationService.findAutomation(+id);
   }
+
+ 
 }
