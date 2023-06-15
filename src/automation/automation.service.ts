@@ -5,6 +5,27 @@ import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Row } from './Row';
 
+interface Rule {
+  id: number;
+  param: string;
+  days?: string;
+  operand: string;
+  types: string;
+  daysAgo: string;
+  daysCompareTo: string;
+  dollarValue: string;
+  percentValue: string;
+  display_text: string;
+}
+
+interface JoinList {
+  [alias: string]: string;
+}
+
+interface WithList {
+  [alias: string]: string;
+}
+
 @Injectable()
 export class AutomationService {
   constructor(
@@ -149,5 +170,169 @@ export class AutomationService {
 
   async findAutomation(id: number): Promise<Automation | null> {
     return await this.prisma.automation.findUnique({ where: { id } });
+  }
+
+  // Author: Manjul Bhattarai
+  // Service for Query Builder based on automation rules
+  async generateQuery(): Promise<string> {
+
+    const rules: Rule[] = [
+      {
+        id: 1,
+        param: 'adset_age',
+        days: '',
+        operand: '<',
+        types: '',
+        daysAgo: '',
+        daysCompareTo: '10',
+        dollarValue: '',
+        percentValue: '',
+        display_text: 'AdSet Age < 10 days',
+      },
+      {
+        id: 2,
+        param: 'current_budget',
+        operand: '=',
+        types: '',
+        daysAgo: '',
+        daysCompareTo: '',
+        dollarValue: '25',
+        percentValue: '',
+        display_text: 'Current Budget = 25',
+      },
+      {
+        id: 3,
+        param: 'margin',
+        operand: '>',
+        types: 'timeframe',
+        daysAgo: '1',
+        daysCompareTo: '2',
+        dollarValue: '',
+        percentValue: '',
+        display_text: 'Margin 1 days > 5%',
+      },
+      {
+        id: 4,
+        param: 'margin',
+        operand: '>',
+        types: 'timeframe',
+        daysAgo: '1',
+        daysCompareTo: '3',
+        dollarValue: '',
+        percentValue: '',
+        display_text: 'Margin 1 days > 5%',
+      }
+    ];
+    const [whereList, joinList, withList] = this.buildQueryPartials(rules);
+
+    let query = 'WITH\n';
+
+  const withEntries = Object.values(withList);
+  for (let i = 0; i < withEntries.length; i++) {
+    query += withEntries[i];
+    if (i !== withEntries.length - 1) {
+      query += ',';
+    }
+    query += '\n';
+  }
+
+  const select = 'SELECT * FROM AdSets t1\n';
+  query += select;
+
+  const joinEntries = Object.values(joinList);
+  for (const entry of joinEntries) {
+    query += entry;
+  }
+
+  let whereClause = 'WHERE\n';
+  for (let i = 0; i < whereList.length; i++) {
+    if (i === 0) {
+      whereClause += whereList[i] + '\n';
+    } else {
+      whereClause += 'AND ' + whereList[i] + '\n';
+    }
+  }
+
+    query += whereClause;
+    return query;
+  }
+
+  buildQueryPartials(rules: Rule[]): [string[], JoinList, WithList] {
+    const whereList: string[] = [];
+    const joinList: JoinList = {};
+    const withList: WithList = {};
+  
+    for (const rule of rules) {
+      const param = rule.param;
+  
+      if (param === 'current_budget') {
+        const operand = rule.operand;
+        const value = rule.dollarValue;
+        const condition = `t1.${param}`;
+        whereList.push(this.generateWhere(condition, operand, value));
+      } else if (param === 'adset_age') {
+        const operand = rule.operand;
+        const value = rule.daysCompareTo;
+        const condition = '(TO_DAYS(NOW()) - TO_DAYS(t1.start_time))';
+        whereList.push(this.generateWhere(condition, operand, value));
+      } else if (param === 'margin' || param === 'gross_profit') {
+        const operand = rule.operand;
+        const types = rule.types;
+        const daysAgo = rule.daysAgo;
+        const daysCompareTo = rule.daysCompareTo;
+        const percentValue = rule.percentValue;
+        const dollarValue = rule.dollarValue;
+  
+        const days: string[] = [];
+        if (types === 'timeframe') {
+          days.push(daysAgo);
+          days.push(daysCompareTo);
+        } else {
+          days.push(daysAgo);
+        }
+  
+        const conditions: string[] = [];
+        for (const day of days) {
+          const [alias, withQuery] = this.generateWith(param, day);
+          withList[alias] = withQuery;
+          joinList[alias] = this.generateJoin(alias);
+          if (types === 'number') {
+            let condition = `${alias}.${param}`;
+            let value = "";
+            if (param === 'gross_profit') {
+              value = dollarValue;
+            } else {
+              value = percentValue;
+            }
+            whereList.push(this.generateWhere(condition, operand, value));
+          } else {
+            const condition = `${alias}.${param}`;
+            conditions.push(condition);
+          }
+        }
+  
+        if (types === 'timeframe') {
+          whereList.push(this.generateWhere(conditions[0], operand, conditions[1]));
+        }
+      }
+    }
+  
+    return [whereList, joinList, withList];
+  }
+
+  generateWhere(condition: string, operand: string, value: string): string {
+    const query = `${condition} ${operand} ${value}`;
+    return query;
+  }
+  
+  generateWith(param: string, day: string): [string, string] {
+    const alias = param + day;
+    const withQuery = `\t${alias} AS (SELECT * FROM TestData WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY))`;
+    return [alias, withQuery];
+  }
+  
+  generateJoin(alias: string): string {
+    const joinQuery = `\tJOIN ${alias} ON t1.adset_id = ${alias}.adset_id\n`;
+    return joinQuery;
   }
 }
