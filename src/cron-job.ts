@@ -2,6 +2,7 @@ import { AdSetsService } from './facebook/ad-sets/ad_sets.service';
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { DMReportingService } from './external/dm-reporting/dm_reporting.service';
+import { AutomationService } from './automation/automation.service';
 
 @Injectable()
 export class TrackerCronJob {
@@ -9,6 +10,7 @@ export class TrackerCronJob {
     private readonly extAPIService: DMReportingService,
     private readonly dmReportingCronService: DMReportingService,
     private readonly adSetsService: AdSetsService,
+    private readonly automationService: AutomationService,
   ) {}
 
   @Cron(CronExpression.EVERY_30_MINUTES)
@@ -21,5 +23,6 @@ export class TrackerCronJob {
   @Cron(CronExpression.EVERY_30_MINUTES)
   async adSetsCron(): Promise<void> {
     await this.adSetsService.fetchAdSetsDataFromApi();
+    await this.automationService.runAutomation();
   }
 }
