@@ -20,7 +20,7 @@ export class TrackerCronJob {
     await this.extAPIService.fetchExternalApiData(startDate, endDate);
   }
 
-  @Cron(CronExpression.EVERY_30_MINUTES)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async adSetsCron(): Promise<void> {
     await this.adSetsService.fetchAdSetsDataFromApi();
     await this.automationService.runAutomation();

@@ -40,6 +40,7 @@ export class AutomationService {
     });
     const formattedRows = await Promise.all(formattedRowsPromises);
 
+    console.log(createAutomationDto.budgetPercent);
     const jsonRules = JSON.stringify(formattedRows);
     const automationData = await this.prisma.automation.create({
       data: {
@@ -49,6 +50,11 @@ export class AutomationService {
         budgetType: createAutomationDto.budgetType,
         options: createAutomationDto.options,
         status: createAutomationDto.status,
+        budgetAmount: createAutomationDto.budgetAmount,
+        budgetPercent: createAutomationDto.budgetPercent,
+        post_to_database: createAutomationDto.post_to_database,
+        lastRun: createAutomationDto.lastRun,
+        nextRun: createAutomationDto.nextRun,
       },
     });
     return automationData;
@@ -99,6 +105,11 @@ export class AutomationService {
         options: automation.options,
         budgetType: automation.budgetType,
         status: automation.status,
+        lastRun: automation.lastRun,
+        nextRun: automation.nextRun,
+        budgetPercent: automation.budgetPercent,
+        budgetAmount: automation.budgetAmount,
+        post_to_database: automation.post_to_database,
         automationInMinutes: automation.automationInMinutes,
         createdAt: automation.createdAt,
         updatedAt: automation.updatedAt,
@@ -142,6 +153,11 @@ export class AutomationService {
         budgetType: createAutomationDto.budgetType,
         options: createAutomationDto.options,
         status: createAutomationDto.status,
+        budgetAmount: createAutomationDto.budgetAmount,
+        budgetPercent: createAutomationDto.budgetPercent,
+        post_to_database: createAutomationDto.post_to_database,
+        lastRun: createAutomationDto.lastRun,
+        nextRun: createAutomationDto.nextRun,
       },
     });
     return {
@@ -184,15 +200,35 @@ export class AutomationService {
       await Promise.all(
         automations.map((automation) => {
           const rules = JSON.parse(automation.rules) as Rule[];
-          const query = this.generateQuery(rules);
+          const { automationInMinutes, lastRun } = automation;
+          console.log('automationInMinute', +automationInMinutes);
+          console.log('lastRun', lastRun);
+          const currentDate = new Date().getTime();
+          console.log('currentDate ', currentDate);
+          const lastRunTime = new Date(lastRun).getDate();
+          console.log('lastRunTime', lastRunTime);
+          const nextRun = +(lastRunTime + Number(automationInMinutes) * 60000);
+          console.log('nextRun', nextRun);
+          if (currentDate >= nextRun) {
+            const query = this.generateQuery(rules);
+            console.log(query);
 
-          if (query) {
-            const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
-            if (Array.isArray(res) && res.length > 1) {
-              results.push(true);
-            } else {
-              results.push(false);
+            if (query) {
+              const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
+              if (Array.isArray(res) && res.length > 1) {
+                results.push(true);
+              } else {
+                results.push(false);
+              }
             }
+
+            // const updaetAutomation = this.prisma.automation.update({
+            //   where: { id: automation.id },
+            //   data: {
+            //     lastRun: new Date(),
+            //     nextRun: new Date(nextRun),
+            //   },
+            // });
           }
         }),
       );
@@ -202,6 +238,8 @@ export class AutomationService {
       this.logger.error(error);
     }
   }
+
+  //Check Time FOR CRON JOB
 
   // Author: Manjul Bhattarai
   // Service for Query Builder based on automation rules
