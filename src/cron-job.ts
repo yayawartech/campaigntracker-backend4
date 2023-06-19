@@ -15,12 +15,16 @@ export class TrackerCronJob {
 
   @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron(): Promise<any> {
-    const startDate = new Date().toISOString().substring(0, 10);
-    const endDate = new Date().toISOString().substring(0, 10);
+    const currentDate = new Date();
+    const previousDate = new Date(currentDate);
+    previousDate.setDate(previousDate.getDate() - 1);
+
+    const startDate = previousDate.toISOString().substring(0, 10);
+    const endDate = previousDate.toISOString().substring(0, 10);
     await this.extAPIService.fetchExternalApiData(startDate, endDate);
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async adSetsCron(): Promise<void> {
     await this.adSetsService.fetchAdSetsDataFromApi();
     await this.automationService.runAutomation();
