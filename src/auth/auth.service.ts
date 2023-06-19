@@ -3,6 +3,7 @@ import { UsersService } from '../users/users.service';
 import { UserLoginDto } from './dto/user-login.dto';
 import crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -44,5 +45,17 @@ export class AuthService {
       name: user.name,
       email: user.email,
     };
+  }
+  async logout(res: Response): Promise<void> {
+    try {
+      res.clearCookie('token');
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: 'Somthing is Wrong',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
