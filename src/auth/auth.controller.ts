@@ -4,7 +4,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
+  Get,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -35,6 +35,15 @@ export class AuthController {
           success: true,
           message: 'LogIn Successfully',
         });
+    });
+  }
+
+  @Get('logout')
+  async logout(@Res() res: Response) {
+    await this, this.authService.logout(res);
+    return res.status(HttpStatus.OK).json({
+      success: true,
+      message: 'LogOut Successfully',
     });
   }
 }

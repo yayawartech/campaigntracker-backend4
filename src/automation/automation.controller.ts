@@ -51,14 +51,17 @@ export class AutomationController {
 
   // Get JSON for Query Builder
   @Get('/generate')
-  async generateQuery(){
-    return this.automationService.generateQuery();
+  async generateQuery(@Query() params: any): Promise<string> {
+    return this.automationService.generateQuery(params);
   }
-  
+
+  @Get('/test')
+  async runAutomation() {
+    return this.automationService.runAutomation();
+  }
+
   @Get(':id')
   async findAutomation(@Param('id') id: string) {
     return this.automationService.findAutomation(+id);
   }
-
- 
 }
