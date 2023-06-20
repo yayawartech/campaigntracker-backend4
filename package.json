@@ -36,6 +36,7 @@
     "axios": "^1.4.0",
     "class-validator": "^0.14.0",
     "cookie-parser": "^1.4.6",
+    "dayjs": "^1.11.8",
     "dotenv": "^16.1.4",
     "id128": "^1.6.6",
     "jest-config": "^29.5.0",

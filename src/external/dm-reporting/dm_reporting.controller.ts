@@ -3,6 +3,11 @@ import { Controller, Get, Param, UseGuards, Query } from '@nestjs/common';
 import { DMReportingService } from './dm_reporting.service';
 import { DmReporting, v_spendreport } from '@prisma/client';
 import { AuthGuard } from '@nestjs/passport';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(timezone);
+dayjs.extend(utc);
 //@UseGuards(CustomCookieGuard)
 @Controller('campaigns')
 @UseGuards(AuthGuard('jwt'))
@@ -49,5 +54,16 @@ export class DMReportingController {
       adsetId,
     );
     return resp;
+  }
+
+  @Get('/test')
+  async test() {
+    const dateTime = dayjs().tz('America/New_York');
+
+    // for (let i = 0; i < 10; i++) {
+    //   const startDate = dateTime.subtract(i, 'day').format('YYYY-MM-DD');
+    //   await this.dmReportingService.fetchExternalApiData(startDate, startDate);
+    // }
+    // const startDate = '2023-06-14';
   }
 }
