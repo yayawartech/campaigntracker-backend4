@@ -38,6 +38,7 @@
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.1.4",
     "id128": "^1.6.6",
+    "jest-config": "^29.5.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",
