@@ -14,7 +14,13 @@ import {
 import { PaginationService } from 'src/pagination/pagination.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DataMigrationQuery } from './query';
-
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import advanceFormat from 'dayjs/plugin/advancedFormat';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(advanceFormat);
 @Injectable()
 export class DMReportingService {
   constructor(
@@ -32,7 +38,6 @@ export class DMReportingService {
     params.append('token', DM_REPORTING_ACCESS_TOKEN);
     params.append('startDate', startDate);
     params.append('endDate', endDate);
-
     const url = DM_REPORTING_URL + params.toString();
     try {
       this.logger.log('Started cron job for History DM Reporting API');
@@ -43,6 +48,7 @@ export class DMReportingService {
             const manager = record.Manager || null;
             const recordDate =
               record.Date.substring(0, 10) + ' ' + record.Hour + ':00:00';
+            const formattedDate = dayjs.tz(recordDate, 'America/New_York');
             const createdRecords = this.prismaService.dmReportingHistory.create(
               {
                 data: {
@@ -51,7 +57,7 @@ export class DMReportingService {
                   domain: record.Domain,
                   manager: manager,
                   buyer: record.Buyer,
-                  start_time: new Date(recordDate),
+                  start_time: formattedDate.toDate(),
                   adset: record.Adset_name,
                   adset_id: record.Adset_Id,
                   revenue: record.Revenue,
