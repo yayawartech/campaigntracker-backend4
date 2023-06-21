@@ -7,8 +7,8 @@ export class CreateAutomationDto {
   budgetType: string;
   options: string;
   status: string;
-  budgetPercent: string;
-  budgetAmount: string;
+  budgetPercent: string | null;
+  budgetAmount: string | null;
   automationInMinutes: string;
   post_to_database: boolean;
   data: Row[];
