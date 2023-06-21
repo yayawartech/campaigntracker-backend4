@@ -190,7 +190,6 @@ export class AutomationService {
   }
 
   //GET QUERY FROM DATABASE
-
   async runAutomation(): Promise<boolean> {
     this.logger.log('Started Cron Job for RunAutomation');
     try {
@@ -202,8 +201,6 @@ export class AutomationService {
           status: 'active',
         },
       });
-
-      this.logger.log(automations.length);
 
       const results: boolean[] = [];
 
@@ -222,9 +219,9 @@ export class AutomationService {
             results.push(false);
           }
         }
-        // 4. Update NextRun
-        // 5. Update LastRun
-
+       
+        
+        // 4. Update NextRun, Update LastRun
         const updateAutomation = this.prisma.automation.update({
           where: { id: automation.id },
           data: {
@@ -236,10 +233,10 @@ export class AutomationService {
 
       // 6. If return status is TRUE
       if (results.includes(true)) {
-        this.logger.log('Execut API CALL');
+        // 7. Run API Call
+        this.logger.log('Execute API CALL');
       } else {
         this.logger.log('Failed');
-        // 7. Run API Call
       }
 
       this.logger.log('End Cron Job for Run Automation');
@@ -248,8 +245,6 @@ export class AutomationService {
       this.logger.error(error);
     }
   }
-
-  //Check Time FOR CRON JOB
 
   // Author: Manjul Bhattarai
   // Service for Query Builder based on automation rules
