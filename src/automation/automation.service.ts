@@ -190,56 +190,61 @@ export class AutomationService {
   }
 
   //GET QUERY FROM DATABASE
-
   async runAutomation(): Promise<boolean> {
     this.logger.log('Started Cron Job for RunAutomation');
     try {
-      const automations = await this.prisma.automation.findMany();
+      const currentDate = new Date();
+
+      const automations = await this.prisma.automation.findMany({
+        where: {
+          OR: [{ nextRun: { lt: new Date() } }, { lastRun: null }],
+          status: 'active',
+        },
+      });
+
       const results: boolean[] = [];
 
-      await Promise.all(
-        automations.map((automation) => {
-          const rules = JSON.parse(automation.rules) as Rule[];
-          const { automationInMinutes, lastRun } = automation;
-          console.log('automationInMinute', +automationInMinutes);
-          console.log('lastRun', lastRun);
-          const currentDate = new Date().getTime();
-          console.log('currentDate ', currentDate);
-          const lastRunTime = new Date(lastRun).getDate();
-          console.log('lastRunTime', lastRunTime);
-          const nextRun = +(lastRunTime + Number(automationInMinutes) * 60000);
-          console.log('nextRun', nextRun);
-          if (currentDate >= nextRun) {
-            const query = this.generateQuery(rules);
-            console.log(query);
-
-            if (query) {
-              const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
-              if (Array.isArray(res) && res.length > 1) {
-                results.push(true);
-              } else {
-                results.push(false);
-              }
-            }
-
-            // const updaetAutomation = this.prisma.automation.update({
-            //   where: { id: automation.id },
-            //   data: {
-            //     lastRun: new Date(),
-            //     nextRun: new Date(nextRun),
-            //   },
-            // });
+      // 1. Loop over automations
+      automations.map((automation) => {
+        const { automationInMinutes } = automation;
+        const rules = JSON.parse(automation.rules);
+        // 2. For each row, generateQuery.
+        const query = this.generateQuery(rules);
+        if (query) {
+          // 3. Execute the Query.
+          const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
+          if (Array.isArray(res) && res.length > 1) {
+            results.push(true);
+          } else {
+            results.push(false);
           }
-        }),
-      );
+        }
+       
+        
+        // 4. Update NextRun, Update LastRun
+        const updateAutomation = this.prisma.automation.update({
+          where: { id: automation.id },
+          data: {
+            lastRun: currentDate,
+            nextRun: new Date(currentDate.getTime() + automationInMinutes),
+          },
+        });
+      });
+
+      // 6. If return status is TRUE
+      if (results.includes(true)) {
+        // 7. Run API Call
+        this.logger.log('Execute API CALL');
+      } else {
+        this.logger.log('Failed');
+      }
+
       this.logger.log('End Cron Job for Run Automation');
       return results.includes(false) ? false : true;
     } catch (error) {
       this.logger.error(error);
     }
   }
-
-  //Check Time FOR CRON JOB
 
   // Author: Manjul Bhattarai
   // Service for Query Builder based on automation rules
@@ -349,9 +354,18 @@ export class AutomationService {
     return query;
   }
 
-  generateWith(param: string, day: string): [string, string] {
+  generateWith(
+    param: string,
+    day: string,
+    adset_id?: string,
+  ): [string, string] {
     const alias = param + day;
-    const withQuery = `\t${alias} AS (SELECT * FROM TestData WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY))`;
+    let withQuery = `\t${alias} AS (SELECT * FROM TestData WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY)`;
+    if (adset_id) {
+      const adsetIdCondition = ` AND adset_id = '${adset_id}'`;
+      withQuery += adsetIdCondition;
+    }
+    withQuery += ')';
     return [alias, withQuery];
   }
 
