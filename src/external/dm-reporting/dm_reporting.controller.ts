@@ -58,12 +58,12 @@ export class DMReportingController {
 
   @Get('/test')
   async test() {
-    const dateTime = dayjs().tz('America/New_York');
-
-    // for (let i = 0; i < 10; i++) {
-    //   const startDate = dateTime.subtract(i, 'day').format('YYYY-MM-DD');
-    //   await this.dmReportingService.fetchExternalApiData(startDate, startDate);
-    // }
+    // await this.dmReportingService.fetchExternalApiData(dateTime, dateTime);
+    for (let i = 0; i < 10; i++) {
+      const dateTime = dayjs().tz('America/New_York');
+      const startDate = dateTime.subtract(i, 'day').format('YYYY-MM-DD');
+      await this.dmReportingService.fetchExternalApiData(startDate, startDate);
+    }
     // const startDate = '2023-06-14';
   }
 }

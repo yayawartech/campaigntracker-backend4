@@ -40,7 +40,9 @@ export class DMReportingService {
     params.append('endDate', endDate);
     const url = DM_REPORTING_URL + params.toString();
     try {
-      this.logger.log('Started cron job for History DM Reporting API');
+      this.logger.log(
+        `Started cron job for History DM Reporting API ${startDate}-${endDate}`,
+      );
       const response: AxiosResponse = await axios.get(url);
       if (response) {
         const dataToInsert: DmReportingHistory[] = response.data.map(
