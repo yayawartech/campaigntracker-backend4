@@ -13,9 +13,15 @@ export class AutomationlogService {
     private readonly paginationService: PaginationService<AutomationLog>,
   ) {}
 
-  async createAutomationLog(dto: AutomationLogDto): Promise<void> {
+  async createAutomationLog(log_data:any): Promise<AutomationLog> {
     try {
-      await this.prisma.automationLog.create();
+      return await this.prisma.automationLog.create({
+        data: {
+          automationId: log_data["automation_id"],
+          action: log_data["api_call_action"],
+          rules: log_data["rules"]
+        },
+      });
     } catch (error) {
       console.error('Error creating automation log:', error);
       throw error;
