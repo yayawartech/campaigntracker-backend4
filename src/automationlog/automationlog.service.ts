@@ -15,8 +15,6 @@ export class AutomationlogService {
   ) {}
 
   async createAutomationLog(log_data: AutomationData): Promise<AutomationLog> {
-    console.log(log_data);
-    console.log(log_data['automation_id']);
     try {
       return await this.prisma.automationLog.create({
         data: {
@@ -51,6 +49,3 @@ export class AutomationlogService {
     );
   }
 }
-
-// Create a method to insert into database
-// View

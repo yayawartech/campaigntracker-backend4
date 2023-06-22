@@ -100,13 +100,14 @@ model Automation {
   automationInMinutes String?
   options   String?
   budgetType String?
-  status  String?
+  actionStatus String?
   budgetPercent String?
   budgetAmount String?
   lastRun DateTime?
   nextRun DateTime?
   displayText String?
-  post_to_database  Boolean  @default(true)
+  postToDatabase  Boolean  @default(true)
+  status  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

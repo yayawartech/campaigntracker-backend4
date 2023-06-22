@@ -7,11 +7,12 @@ export class CreateAutomationDto {
   budgetType: string;
   options: string;
   status: string;
+  actionStatus: string;
   budgetPercent: string | null;
   budgetAmount: string | null;
   automationInMinutes: string;
   displayText: string;
-  post_to_database: boolean;
+  postToDatabase: boolean;
   data: Row[];
   lastRun: string | null;
   nextRun: string | null;
