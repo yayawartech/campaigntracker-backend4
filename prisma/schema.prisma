@@ -124,3 +124,11 @@ view v_spendreport {
 
   @@id([reportDate, adset_id])
 }
+
+model AutomationLog{   
+  id Int @id @default(autoincrement())
+  automationId Int 
+  rules String? @db.Text
+  action String? @db.Text
+  createdAt DateTime @default(now())
+}

@@ -219,8 +219,7 @@ export class AutomationService {
             results.push(false);
           }
         }
-       
-        
+
         // 4. Update NextRun, Update LastRun
         const updateAutomation = this.prisma.automation.update({
           where: { id: automation.id },
@@ -233,10 +232,15 @@ export class AutomationService {
 
       // 6. If return status is TRUE
       if (results.includes(true)) {
-        // 7. Run API Call
         this.logger.log('Execute API CALL');
+        // 7. Run API Call
+        console.log(results);
+        // 7.1 AutomationLog service -> insert()
+        // automation_id, api_call
+        // api_call => "status api called"
       } else {
         this.logger.log('Failed');
+        console.log(results);
       }
 
       this.logger.log('End Cron Job for Run Automation');
