@@ -231,14 +231,14 @@ export class AutomationService {
     return await this.prisma.automation.findUnique({ where: { id } });
   }
 
-  //GET QUERY FROM DATABASE
+  //Run Automation
   async runAutomation(): Promise<boolean> {
     
     this.logger.log('Started Cron Job for RunAutomation');
     try {
       const automations = await this.prisma.automation.findMany({
         where: {
-          OR: [{ nextRun: { lt: new Date() } }, { lastRun: null }],
+          OR: [{ nextRun: { lte: new Date() } }, { lastRun: null }],
           status: 'active',
         },
       });
@@ -246,68 +246,79 @@ export class AutomationService {
       const results: boolean[] = [];
       if (automations.length <= 0) {
         this.logger.log("No Rules Matched. Automation will not run..");
+        //return false;
       }
 
-      automations.map(async (automation) => {
-        
-        const { automationInMinutes } = automation;
-        const rules = JSON.parse(automation.rules);
-        
-        // For each row, generateQuery.
-        const query = this.generateQuery(rules);
-        if (query) {
-          // Execute the Query.
-          const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
-          if (Array.isArray(res) && res.length > 1) {
-            // Execute API Call
-            if (automation.postToDatabase){
-              let apiCallAction = "";
-              if (automation.options === "Status") {
+      const adSets = await this.prisma.adSets.findMany({});
 
-                apiCallAction = automation.options + " =>  " + automation.actionStatus   
-              }
-              else if (automation.budgetType === "percentage"){
-                apiCallAction = automation.options + " =>  " + automation.budgetPercent + " %"  
-              }
-              else if (automation.budgetType === "amount"){
-                apiCallAction = automation.options + " =>  " + automation.budgetAmount + " %"  
-              }
+      adSets.map(async (adSet) => {
+        const { adset_id } = adSet;
+        
+        // Match the automation rule for each adSetId
 
-              const data = {
-                automationId: automation.id,
-                apiCallAction: apiCallAction,
-                rulesDisplay: automation.displayText,
-              };
-              this.logger.log('API Executed for automation: '+automation.id);
-              this.automationLogService.createAutomationLog(data);
-            }
-            else {
-              this.logger.log('Actual API CALL');
+        automations.map(async (automation) => {
+        
+          const { automationInMinutes } = automation;
+          const rules = JSON.parse(automation.rules);
+          
+          // For each row, generateQuery.
+          const query = this.generateQuery(rules,adset_id);
+          if (query) {
+            // Execute the Query.
+            const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
+            if ((Array.isArray(res) && res.length > 1)) {
+
+              // Execute API Call
+              if (automation.postToDatabase){
+                let apiCallAction = "";
+                if (automation.options === "Status") {
+  
+                  apiCallAction = automation.options + " =>  " + automation.actionStatus   
+                }
+                else if (automation.budgetType === "percentage"){
+                  apiCallAction = automation.options + " =>  " + automation.budgetPercent + " %"  
+                }
+                else if (automation.budgetType === "amount"){
+                  apiCallAction = automation.options + " =>  " + automation.budgetAmount + " %"  
+                }
+  
+                const data = {
+                  automationId: automation.id,
+                  apiCallAction: apiCallAction,
+                  rulesDisplay: automation.displayText,
+                  adSetId: adset_id
+                };
+                this.automationLogService.createAutomationLog(data);
+              }
+              else {
+                this.logger.log('Actual API CALL');
+              }
             }
           }
-        }
+  
+          // Create a new Date object representing the current date and time
+          const currentDate = new Date();
+  
+          // Add automation Minutes minutes to the current date
+          currentDate.setMinutes(
+            currentDate.getMinutes() + parseInt(automationInMinutes),
+          );
+  
+          // Retrieve the updated date and time
+          const updatedDate = currentDate;
+  
+          // 4. Update NextRun, Update LastRun
+          const updateAutomation = await this.prisma.automation.update({
+            where: { id: automation.id },
+            data: {
+              lastRun: new Date(),
+              nextRun: updatedDate,
+            },
+          });        
+        });
 
-        // Create a new Date object representing the current date and time
-        const currentDate = new Date();
-
-        // Add automation Minutes minutes to the current date
-        currentDate.setMinutes(
-          currentDate.getMinutes() + parseInt(automationInMinutes),
-        );
-
-        // Retrieve the updated date and time
-        const updatedDate = currentDate;
-
-        // 4. Update NextRun, Update LastRun
-        const updateAutomation = await this.prisma.automation.update({
-          where: { id: automation.id },
-          data: {
-            lastRun: new Date(),
-            nextRun: updatedDate,
-          },
-        });        
       });
-
+      
       this.logger.log('End Cron Job for Run Automation');
       return results.includes(false) ? false : true;
     } catch (error) {
@@ -317,8 +328,9 @@ export class AutomationService {
 
   // Author: Manjul Bhattarai
   // Service for Query Builder based on automation rules
-  async generateQuery(rules: Rule[]): Promise<string> {
-    const [whereList, joinList, withList] = this.buildQueryPartials(rules);
+  async generateQuery(rules: Rule[],adset_id: string): Promise<string> {
+    
+    const [whereList, joinList, withList] = this.buildQueryPartials(rules,adset_id);
 
     let query = 'WITH\n';
 
@@ -349,17 +361,17 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
-
     return query;
   }
 
-  buildQueryPartials(rules: Rule[]): [string[], JoinList, WithList] {
+  buildQueryPartials(rules: Rule[],adset_id: string): [string[], JoinList, WithList] {
     const whereList: string[] = [];
     const joinList: JoinList = {};
     const withList: WithList = {};
 
     for (const rule of rules) {
       const param = rule.param;
+
 
       if (param === 'current_budget') {
         const operand = rule.operand;
@@ -379,6 +391,7 @@ export class AutomationService {
         const percentValue = rule.percentValue;
         const dollarValue = rule.dollarValue;
 
+
         const days: string[] = [];
         if (types === 'timeframe') {
           days.push(daysAgo);
@@ -389,7 +402,7 @@ export class AutomationService {
 
         const conditions: string[] = [];
         for (const day of days) {
-          const [alias, withQuery] = this.generateWith(param, day);
+          const [alias, withQuery] = this.generateWith(param, day,adset_id);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
           if (types === 'number') {

@@ -21,6 +21,7 @@ export class AutomationlogService {
           automationId: log_data.automationId,
           action: log_data.apiCallAction,
           rules: log_data.rulesDisplay,
+          adset_id: log_data.adSetId,
         },
       });
     } catch (error) {

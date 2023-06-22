@@ -5,4 +5,5 @@ export interface AutomationData {
   automationId: number;
   apiCallAction: string;
   rulesDisplay: string;
+  adSetId: string;
 }
