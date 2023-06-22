@@ -105,6 +105,7 @@ model Automation {
   budgetAmount String?
   lastRun DateTime?
   nextRun DateTime?
+  displayText String?
   post_to_database  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
