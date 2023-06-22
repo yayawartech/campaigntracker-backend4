@@ -4,6 +4,7 @@ import { AutomationLogDto } from './dto/AutomationLog.dto';
 import { Logger } from '@nestjs/common';
 import { AutomationLog } from '@prisma/client';
 import { PaginationService } from 'src/pagination/pagination.service';
+import { AutomationData } from './AutomationData';
 
 @Injectable()
 export class AutomationlogService {
@@ -13,13 +14,15 @@ export class AutomationlogService {
     private readonly paginationService: PaginationService<AutomationLog>,
   ) {}
 
-  async createAutomationLog(log_data:any): Promise<AutomationLog> {
+  async createAutomationLog(log_data: AutomationData): Promise<AutomationLog> {
+    console.log(log_data);
+    console.log(log_data['automation_id']);
     try {
       return await this.prisma.automationLog.create({
         data: {
-          automationId: log_data["automation_id"],
-          action: log_data["api_call_action"],
-          rules: log_data["rules"]
+          automationId: log_data.automationId,
+          action: log_data.apiCallAction,
+          rules: log_data.rulesDisplay,
         },
       });
     } catch (error) {
