@@ -35,7 +35,6 @@ export class UsersController {
 
   @Get(':id')
   async findAdAccount(@Param('id') id: number) {
-    console.log('idtype', typeof id);
     return this.userService.findUser(+id);
   }
 
