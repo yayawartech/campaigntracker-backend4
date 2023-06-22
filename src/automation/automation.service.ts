@@ -48,7 +48,10 @@ export class AutomationService {
     const currentDate = new Date();
 
     // Add 10 minutes to the current date
-    currentDate.setMinutes(currentDate.getMinutes() + parseInt(createAutomationDto.automationInMinutes));
+    currentDate.setMinutes(
+      currentDate.getMinutes() +
+        parseInt(createAutomationDto.automationInMinutes),
+    );
 
     // Retrieve the updated date and time
     const updatedDate = currentDate;
@@ -72,17 +75,15 @@ export class AutomationService {
     });
     return automationData;
   }
-  // Create display_text 
-  createAutomationDisplayText(jsonRules : any) : string {
-
-    let displayTextOverall = "";
-    jsonRules.forEach(rule => {
-      displayTextOverall = displayTextOverall + rule.displayText + "\n"
+  // Create display_text
+  createAutomationDisplayText(jsonRules: any): string {
+    let displayTextOverall = '';
+    jsonRules.forEach((rule) => {
+      displayTextOverall = displayTextOverall + rule.displayText + '\n';
     });
 
     return displayTextOverall;
   }
-
 
   async formatData(data) {
     let display_text: string = '';
@@ -172,7 +173,10 @@ export class AutomationService {
     const currentDate = new Date();
 
     // Add 10 minutes to the current date
-    currentDate.setMinutes(currentDate.getMinutes() + parseInt(createAutomationDto.automationInMinutes));
+    currentDate.setMinutes(
+      currentDate.getMinutes() +
+        parseInt(createAutomationDto.automationInMinutes),
+    );
 
     // Retrieve the updated date and time
     const updatedDate = currentDate;
@@ -180,7 +184,6 @@ export class AutomationService {
     const jsonRules = JSON.stringify(formattedRows);
     const displayTextOverall = this.createAutomationDisplayText(formattedRows);
     const automation = await this.prisma.automation.update({
-      
       where: { id },
       data: {
         rules: jsonRules,
@@ -230,7 +233,6 @@ export class AutomationService {
   async runAutomation(): Promise<boolean> {
     this.logger.log('Started Cron Job for RunAutomation');
     try {
-
       const automations = await this.prisma.automation.findMany({
         where: {
           OR: [{ nextRun: { lt: new Date() } }, { lastRun: null }],
@@ -251,16 +253,18 @@ export class AutomationService {
           const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
           if (Array.isArray(res) && res.length > 1) {
             this.logger.log('Execute API CALL');
-              // 7. Run API Call
-              // 7.1 AutomationLog service -> create()
-              // automation_id, api_call
-              // api_call => "status api called"
+          } else {
+            // 7. Run API Call
+            // 7.1 AutomationLog service -> create()
+            // automation_id, api_call
+            // api_call => "status api called"
             const data = {
-              "automationId": automation.id,
-              "api_call_action": "Status API Called",
-              "rules": automation.displayText
-              };
-              this.automationLogService.createAutomationLog(data);
+              automationId: automation.id,
+              apiCallAction: 'Status API Called',
+              rulesDisplay: automation.displayText,
+            };
+            console.log(data.automationId);
+            this.automationLogService.createAutomationLog(data);
           }
         }
 
@@ -268,21 +272,23 @@ export class AutomationService {
         const currentDate = new Date();
 
         // Add 10 minutes to the current date
-        currentDate.setMinutes(currentDate.getMinutes() + parseInt(automationInMinutes));
+        currentDate.setMinutes(
+          currentDate.getMinutes() + parseInt(automationInMinutes),
+        );
 
         // Retrieve the updated date and time
         const updatedDate = currentDate;
-            // 4. Update NextRun, Update LastRun
-            const updateAutomation = this.prisma.automation.update({
-              where: { id: automation.id },
-              data: {
-                lastRun: currentDate,
-                nextRun: updatedDate,
-              },
-            });
-          });
-        this.logger.log('End Cron Job for Run Automation');
-        return results.includes(false) ? false : true;
+        // 4. Update NextRun, Update LastRun
+        const updateAutomation = this.prisma.automation.update({
+          where: { id: automation.id },
+          data: {
+            lastRun: currentDate,
+            nextRun: updatedDate,
+          },
+        });
+      });
+      this.logger.log('End Cron Job for Run Automation');
+      return results.includes(false) ? false : true;
     } catch (error) {
       this.logger.error(error);
     }
