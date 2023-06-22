@@ -52,7 +52,6 @@ export class AutomationService {
       currentDate.getMinutes() +
         parseInt(createAutomationDto.automationInMinutes),
     );
-
     // Retrieve the updated date and time
     const updatedDate = currentDate;
     const jsonRules = JSON.stringify(formattedRows);
@@ -65,10 +64,11 @@ export class AutomationService {
         budgetType: createAutomationDto.budgetType,
         options: createAutomationDto.options,
         status: createAutomationDto.status,
+        actionStatus: createAutomationDto.actionStatus,
         budgetAmount: createAutomationDto.budgetAmount,
         budgetPercent: createAutomationDto.budgetPercent,
         displayText: displayTextOverall,
-        post_to_database: createAutomationDto.post_to_database,
+        postToDatabase: createAutomationDto.postToDatabase,
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
       },
@@ -130,12 +130,13 @@ export class AutomationService {
         options: automation.options,
         budgetType: automation.budgetType,
         status: automation.status,
+        actionStatus: automation.actionStatus,
         lastRun: automation.lastRun,
         nextRun: automation.nextRun,
         budgetPercent: automation.budgetPercent,
         budgetAmount: automation.budgetAmount,
         displayText: automation.displayText,
-        post_to_database: automation.post_to_database,
+        postToDatabase: automation.postToDatabase,
         automationInMinutes: automation.automationInMinutes,
         createdAt: automation.createdAt,
         updatedAt: automation.updatedAt,
@@ -192,10 +193,11 @@ export class AutomationService {
         budgetType: createAutomationDto.budgetType,
         options: createAutomationDto.options,
         status: createAutomationDto.status,
+        actionStatus: createAutomationDto.actionStatus,
         budgetAmount: createAutomationDto.budgetAmount,
         budgetPercent: createAutomationDto.budgetPercent,
         displayText: displayTextOverall,
-        post_to_database: createAutomationDto.post_to_database,
+        postToDatabase: createAutomationDto.postToDatabase,
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
       },
@@ -231,6 +233,7 @@ export class AutomationService {
 
   //GET QUERY FROM DATABASE
   async runAutomation(): Promise<boolean> {
+    
     this.logger.log('Started Cron Job for RunAutomation');
     try {
       const automations = await this.prisma.automation.findMany({
@@ -241,52 +244,70 @@ export class AutomationService {
       });
 
       const results: boolean[] = [];
+      if (automations.length <= 0) {
+        this.logger.log("No Rules Matched. Automation will not run..");
+      }
 
-      // 1. Loop over automations
-      automations.map((automation) => {
+      automations.map(async (automation) => {
+        
         const { automationInMinutes } = automation;
         const rules = JSON.parse(automation.rules);
-        // 2. For each row, generateQuery.
+        
+        // For each row, generateQuery.
         const query = this.generateQuery(rules);
         if (query) {
-          // 3. Execute the Query.
+          // Execute the Query.
           const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
           if (Array.isArray(res) && res.length > 1) {
-            this.logger.log('Execute API CALL');
-          } else {
-            // 7. Run API Call
-            // 7.1 AutomationLog service -> create()
-            // automation_id, api_call
-            // api_call => "status api called"
-            const data = {
-              automationId: automation.id,
-              apiCallAction: 'Status API Called',
-              rulesDisplay: automation.displayText,
-            };
-            console.log(data.automationId);
-            this.automationLogService.createAutomationLog(data);
+            // Execute API Call
+            if (automation.postToDatabase){
+              let apiCallAction = "";
+              if (automation.options === "Status") {
+
+                apiCallAction = automation.options + " =>  " + automation.actionStatus   
+              }
+              else if (automation.budgetType === "percentage"){
+                apiCallAction = automation.options + " =>  " + automation.budgetPercent + " %"  
+              }
+              else if (automation.budgetType === "amount"){
+                apiCallAction = automation.options + " =>  " + automation.budgetAmount + " %"  
+              }
+
+              const data = {
+                automationId: automation.id,
+                apiCallAction: apiCallAction,
+                rulesDisplay: automation.displayText,
+              };
+              this.logger.log('API Executed for automation: '+automation.id);
+              this.automationLogService.createAutomationLog(data);
+            }
+            else {
+              this.logger.log('Actual API CALL');
+            }
           }
         }
 
         // Create a new Date object representing the current date and time
         const currentDate = new Date();
 
-        // Add 10 minutes to the current date
+        // Add automation Minutes minutes to the current date
         currentDate.setMinutes(
           currentDate.getMinutes() + parseInt(automationInMinutes),
         );
 
         // Retrieve the updated date and time
         const updatedDate = currentDate;
+
         // 4. Update NextRun, Update LastRun
-        const updateAutomation = this.prisma.automation.update({
+        const updateAutomation = await this.prisma.automation.update({
           where: { id: automation.id },
           data: {
-            lastRun: currentDate,
+            lastRun: new Date(),
             nextRun: updatedDate,
           },
-        });
+        });        
       });
+
       this.logger.log('End Cron Job for Run Automation');
       return results.includes(false) ? false : true;
     } catch (error) {
