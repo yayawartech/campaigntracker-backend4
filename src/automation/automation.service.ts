@@ -208,6 +208,14 @@ export class AutomationService {
       data: automation,
     };
   }
+  async testRaw(): Promise<{message: string}>{
+
+    const query = `SELECT * FROM AdSets;`
+    const res = await this.prisma.$executeRaw(Prisma.sql`${query}`);
+    this.logger.log(res);
+    return {"message":"Hello"};
+  }
+
 
   async deleteData(id: number): Promise<{ message: string }> {
     const entityToDelete = await this.prisma.automation.findUnique({
@@ -264,8 +272,9 @@ export class AutomationService {
           const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
           if (Array.isArray(res) && res.length > 1) {
 
-            // Get a list of AdsetId
-            // TODO: Prajjwal
+            //TODO: Get list of AdsetId. ISSUE: Query is not being executed 
+            //from within but can be run inside a sql shell
+            
             // Execute API Call
             if (automation.postToDatabase) {
               let apiCallAction = '';
@@ -282,14 +291,16 @@ export class AutomationService {
                 apiCallAction =
                   automation.options + ' =>  ' + automation.budgetAmount + ' %';
               }
-
-              const data = {
-                automationId: automation.id,
-                apiCallAction: apiCallAction,
-                rulesDisplay: automation.displayText,
-                adSetId: adset_id,
-              };
-              this.automationLogService.createAutomationLog(data);
+              const adsetIds = []
+              adsetIds.forEach(adsetId => {
+                const data = {
+                  automationId: automation.id,
+                  apiCallAction: apiCallAction,
+                  rulesDisplay: automation.displayText,
+                  adSetId: adsetId,
+                };
+                this.automationLogService.createAutomationLog(data);
+              });
             } else {
               this.logger.log('Actual API CALL');
             }
