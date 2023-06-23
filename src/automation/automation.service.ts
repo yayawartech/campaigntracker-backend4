@@ -5,6 +5,7 @@ import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
+import { report } from 'process';
 
 interface Rule {
   id: number;
@@ -253,8 +254,10 @@ export class AutomationService {
         const { automationInMinutes } = automation;
         const rules = JSON.parse(automation.rules);
 
+        const adsetTable = 'AdSets';
+        const reportView = 'v_spendreport';
         // For each row, generateQuery.
-        const query = await this.generateQuery(rules, adset_id);
+        const query = await this.generateQuery(rules, adset_id,adsetTable,reportView);
         if (query) {
           // Execute the Query.
           const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
@@ -314,10 +317,12 @@ export class AutomationService {
   }
 
   // Service for Query Builder based on automation rules
-  async generateQuery(rules: Rule[], adset_id: string): Promise<string> {
+  async generateQuery(rules: Rule[], adset_id: string, adsetTable: string, reportView: string): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
       adset_id,
+      adsetTable,
+      reportView,
     );
 
     let query = 'WITH\n';
@@ -355,6 +360,8 @@ export class AutomationService {
   buildQueryPartials(
     rules: Rule[],
     adset_id: string,
+    adsetTable: string,
+    reportView: string,
   ): [string[], JoinList, WithList] {
     const whereList: string[] = [];
     const joinList: JoinList = {};
