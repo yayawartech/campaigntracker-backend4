@@ -208,14 +208,12 @@ export class AutomationService {
       data: automation,
     };
   }
-  async testRaw(): Promise<{message: string}>{
-
-    const query = `SELECT * FROM AdSets;`
+  async testRaw(): Promise<{ message: string }> {
+    const query = `SELECT * FROM AdSets;`;
     const res = await this.prisma.$queryRaw(Prisma.sql([query]));
     this.logger.log(res);
-    return {"message":"Hello"};
+    return { message: 'Hello' };
   }
-
 
   async deleteData(id: number): Promise<{ message: string }> {
     const entityToDelete = await this.prisma.automation.findUnique({
@@ -264,33 +262,34 @@ export class AutomationService {
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
-        const query = await this.generateQuery(rules,adsetTable,reportView);
+        const query = await this.generateQuery(rules, adsetTable, reportView);
         if (query) {
           // Execute the Query.
           const res = this.prisma.$queryRaw(Prisma.sql([query]));
           this.logger.log(res);
           if (Array.isArray(res) && res.length > 1) {
-            
             res.map(({ adSetId }) => {
-
-              this.logger.log("This is shit...")
+              this.logger.log('Execute API CAll');
               // Execute API Call
-            if (automation.postToDatabase) {
-              let apiCallAction = '';
-              if (automation.options === 'Status') {
-                apiCallAction =
-                  automation.options + ' =>  ' + automation.actionStatus;
-              } else if (automation.budgetType === 'percentage') {
-                apiCallAction =
-                  automation.options +
-                  ' =>  ' +
-                  automation.budgetPercent +
-                  ' %';
-              } else if (automation.budgetType === 'amount') {
-                apiCallAction =
-                  automation.options + ' =>  ' + automation.budgetAmount + ' %';
-              }
-              
+              if (automation.postToDatabase) {
+                let apiCallAction = '';
+                if (automation.options === 'Status') {
+                  apiCallAction =
+                    automation.options + ' =>  ' + automation.actionStatus;
+                } else if (automation.budgetType === 'percentage') {
+                  apiCallAction =
+                    automation.options +
+                    ' =>  ' +
+                    automation.budgetPercent +
+                    ' %';
+                } else if (automation.budgetType === 'amount') {
+                  apiCallAction =
+                    automation.options +
+                    ' =>  ' +
+                    automation.budgetAmount +
+                    ' %';
+                }
+
                 const data = {
                   automationId: automation.id,
                   apiCallAction: apiCallAction,
@@ -298,10 +297,9 @@ export class AutomationService {
                   adSetId: adSetId,
                 };
                 this.automationLogService.createAutomationLog(data);
-            } else {
-              this.logger.log('Actual API CALL');
-            }
-              
+              } else {
+                this.logger.log('Actual API CALL');
+              }
             });
           }
         }
@@ -313,14 +311,14 @@ export class AutomationService {
         currentDate.setMinutes(
           currentDate.getMinutes() + parseInt(automationInMinutes),
         );
-        
+
         const updatedDate = currentDate;
         // 4. Update NextRun, Update LastRun
         const updateAutomation = await this.prisma.automation.update({
           where: { id: automation.id },
           data: {
             lastRun: new Date(),
-            nextRun: updatedDate
+            nextRun: updatedDate,
           },
         });
       });
@@ -333,10 +331,14 @@ export class AutomationService {
   }
 
   // Service for Query Builder based on automation rules
-  async generateQuery(rules: Rule[], adsetTable: string, reportView: string): Promise<string> {
+  async generateQuery(
+    rules: Rule[],
+    adsetTable: string,
+    reportView: string,
+  ): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
-      reportView
+      reportView,
     );
 
     let query = 'WITH\n';
@@ -411,7 +413,7 @@ export class AutomationService {
 
         const conditions: string[] = [];
         for (const day of days) {
-          const [alias, withQuery] = this.generateWith(param, day,reportView);
+          const [alias, withQuery] = this.generateWith(param, day, reportView);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
           if (types === 'number') {
