@@ -211,7 +211,7 @@ export class AutomationService {
   async testRaw(): Promise<{message: string}>{
 
     const query = `SELECT * FROM AdSets;`
-    const res = await this.prisma.$executeRaw(Prisma.sql`${query}`);
+    const res = await this.prisma.$queryRaw(Prisma.sql([query]));
     this.logger.log(res);
     return {"message":"Hello"};
   }
@@ -257,8 +257,6 @@ export class AutomationService {
         //return false;
       }
 
-      const adset_id = '';
-
       automations.map(async (automation) => {
         const { automationInMinutes } = automation;
         const rules = JSON.parse(automation.rules);
@@ -269,13 +267,14 @@ export class AutomationService {
         const query = await this.generateQuery(rules,adsetTable,reportView);
         if (query) {
           // Execute the Query.
-          const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
+          const res = this.prisma.$queryRaw(Prisma.sql([query]));
+          this.logger.log(res);
           if (Array.isArray(res) && res.length > 1) {
-
-            //TODO: Get list of AdsetId. ISSUE: Query is not being executed 
-            //from within but can be run inside a sql shell
             
-            // Execute API Call
+            res.map(({ adSetId }) => {
+
+              this.logger.log("This is shit...")
+              // Execute API Call
             if (automation.postToDatabase) {
               let apiCallAction = '';
               if (automation.options === 'Status') {
@@ -291,19 +290,19 @@ export class AutomationService {
                 apiCallAction =
                   automation.options + ' =>  ' + automation.budgetAmount + ' %';
               }
-              const adsetIds = []
-              adsetIds.forEach(adsetId => {
+              
                 const data = {
                   automationId: automation.id,
                   apiCallAction: apiCallAction,
                   rulesDisplay: automation.displayText,
-                  adSetId: adsetId,
+                  adSetId: adSetId,
                 };
                 this.automationLogService.createAutomationLog(data);
-              });
             } else {
               this.logger.log('Actual API CALL');
             }
+              
+            });
           }
         }
 
