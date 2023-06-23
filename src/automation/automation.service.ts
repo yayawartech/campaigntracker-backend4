@@ -1,10 +1,11 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { Automation, AutomationLog, Prisma } from '@prisma/client';
+import { Automation, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
+import { report } from 'process';
 
 interface Rule {
   id: number;
@@ -32,14 +33,13 @@ export class AutomationService {
   constructor(
     private prisma: PrismaService,
     private readonly paginationService: PaginationService<Automation>,
-
     @Inject(AutomationlogService)
     private readonly automationLogService: AutomationlogService,
     private readonly logger: Logger,
   ) {}
 
   async storeAutomation(createAutomationDto: CreateAutomationDto) {
-    const formattedRowsPromises = await createAutomationDto.data.map((data) => {
+    const formattedRowsPromises = createAutomationDto.data.map((data) => {
       return this.formatData(data);
     });
     const formattedRows = await Promise.all(formattedRowsPromises);
@@ -75,6 +75,7 @@ export class AutomationService {
     });
     return automationData;
   }
+
   // Create display_text
   createAutomationDisplayText(jsonRules: any): string {
     let displayTextOverall = '';
@@ -86,7 +87,7 @@ export class AutomationService {
   }
 
   async formatData(data) {
-    let display_text: string = '';
+    let display_text = '';
     if ('param' in data && data['param']) {
       display_text += data.param + ' ';
     }
@@ -113,8 +114,8 @@ export class AutomationService {
   }
 
   async getAllAutomations(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
   ): Promise<PaginationResponse<Automation>> {
     const skip = (page - 1) * pageSize;
     const take = Number(pageSize);
@@ -166,7 +167,7 @@ export class AutomationService {
         HttpStatus.NOT_FOUND,
       );
     }
-    const formattedRowsPromises = await createAutomationDto.data.map((data) => {
+    const formattedRowsPromises = createAutomationDto.data.map((data) => {
       return this.formatData(data);
     });
 
@@ -221,7 +222,7 @@ export class AutomationService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const automation = await this.prisma.automation.delete({ where: { id } });
+    await this.prisma.automation.delete({ where: { id } });
     return {
       message: 'Automation deleted successfully',
     };
@@ -233,92 +234,81 @@ export class AutomationService {
 
   //Run Automation
   async runAutomation(): Promise<boolean> {
-    
     this.logger.log('Started Cron Job for RunAutomation');
     try {
       const automations = await this.prisma.automation.findMany({
         where: {
-          OR: [{ nextRun: { lte: new Date() } }, { lastRun: null }],
           status: 'active',
         },
       });
 
       const results: boolean[] = [];
       if (automations.length <= 0) {
-        this.logger.log("No Rules Matched. Automation will not run..");
+        this.logger.log('No Rules Matched. Automation will not run..');
         //return false;
       }
 
-      const adSets = await this.prisma.adSets.findMany({});
+      const adset_id = '';
 
-      adSets.map(async (adSet) => {
-        const { adset_id } = adSet;
-        
-        // Match the automation rule for each adSetId
+      automations.map(async (automation) => {
+        const { automationInMinutes } = automation;
+        const rules = JSON.parse(automation.rules);
 
-        automations.map(async (automation) => {
-        
-          const { automationInMinutes } = automation;
-          const rules = JSON.parse(automation.rules);
-          
-          // For each row, generateQuery.
-          const query = this.generateQuery(rules,adset_id);
-          if (query) {
-            // Execute the Query.
-            const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
-            if ((Array.isArray(res) && res.length > 1)) {
-
-              // Execute API Call
-              if (automation.postToDatabase){
-                let apiCallAction = "";
-                if (automation.options === "Status") {
-  
-                  apiCallAction = automation.options + " =>  " + automation.actionStatus   
-                }
-                else if (automation.budgetType === "percentage"){
-                  apiCallAction = automation.options + " =>  " + automation.budgetPercent + " %"  
-                }
-                else if (automation.budgetType === "amount"){
-                  apiCallAction = automation.options + " =>  " + automation.budgetAmount + " %"  
-                }
-  
-                const data = {
-                  automationId: automation.id,
-                  apiCallAction: apiCallAction,
-                  rulesDisplay: automation.displayText,
-                  adSetId: adset_id
-                };
-                this.automationLogService.createAutomationLog(data);
+        const adsetTable = 'AdSets';
+        const reportView = 'v_spendreport';
+        // For each row, generateQuery.
+        const query = await this.generateQuery(rules, adset_id,adsetTable,reportView);
+        if (query) {
+          // Execute the Query.
+          const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
+          if (Array.isArray(res) && res.length > 1) {
+            // Execute API Call
+            if (automation.postToDatabase) {
+              let apiCallAction = '';
+              if (automation.options === 'Status') {
+                apiCallAction =
+                  automation.options + ' =>  ' + automation.actionStatus;
+              } else if (automation.budgetType === 'percentage') {
+                apiCallAction =
+                  automation.options +
+                  ' =>  ' +
+                  automation.budgetPercent +
+                  ' %';
+              } else if (automation.budgetType === 'amount') {
+                apiCallAction =
+                  automation.options + ' =>  ' + automation.budgetAmount + ' %';
               }
-              else {
-                this.logger.log('Actual API CALL');
-              }
+
+              const data = {
+                automationId: automation.id,
+                apiCallAction: apiCallAction,
+                rulesDisplay: automation.displayText,
+                adSetId: adset_id,
+              };
+              this.automationLogService.createAutomationLog(data);
+            } else {
+              this.logger.log('Actual API CALL');
             }
           }
-  
-          // Create a new Date object representing the current date and time
-          const currentDate = new Date();
-  
-          // Add automation Minutes minutes to the current date
-          currentDate.setMinutes(
-            currentDate.getMinutes() + parseInt(automationInMinutes),
-          );
-  
-          // Retrieve the updated date and time
-          const updatedDate = currentDate;
-  
-          // 4. Update NextRun, Update LastRun
-          const updateAutomation = await this.prisma.automation.update({
-            where: { id: automation.id },
-            data: {
-              lastRun: new Date(),
-              nextRun: updatedDate,
-            },
-          });        
-        });
+        }
 
+        // Create a new Date object representing the current date and time
+        const currentDate = new Date();
+
+        // Add automation Minutes to the current date
+        currentDate.setMinutes(
+          currentDate.getMinutes() + parseInt(automationInMinutes),
+        );
+
+        // 4. Update NextRun, Update LastRun
+        const updateAutomation = await this.prisma.automation.update({
+          where: { id: automation.id },
+          data: {
+            lastRun: new Date(),
+          },
+        });
       });
-      
+
       this.logger.log('End Cron Job for Run Automation');
       return results.includes(false) ? false : true;
     } catch (error) {
@@ -326,11 +316,14 @@ export class AutomationService {
     }
   }
 
-  // Author: Manjul Bhattarai
   // Service for Query Builder based on automation rules
-  async generateQuery(rules: Rule[],adset_id: string): Promise<string> {
-    
-    const [whereList, joinList, withList] = this.buildQueryPartials(rules,adset_id);
+  async generateQuery(rules: Rule[], adset_id: string, adsetTable: string, reportView: string): Promise<string> {
+    const [whereList, joinList, withList] = this.buildQueryPartials(
+      rules,
+      adset_id,
+      adsetTable,
+      reportView,
+    );
 
     let query = 'WITH\n';
 
@@ -364,14 +357,18 @@ export class AutomationService {
     return query;
   }
 
-  buildQueryPartials(rules: Rule[],adset_id: string): [string[], JoinList, WithList] {
+  buildQueryPartials(
+    rules: Rule[],
+    adset_id: string,
+    adsetTable: string,
+    reportView: string,
+  ): [string[], JoinList, WithList] {
     const whereList: string[] = [];
     const joinList: JoinList = {};
     const withList: WithList = {};
 
     for (const rule of rules) {
       const param = rule.param;
-
 
       if (param === 'current_budget') {
         const operand = rule.operand;
@@ -391,7 +388,6 @@ export class AutomationService {
         const percentValue = rule.percentValue;
         const dollarValue = rule.dollarValue;
 
-
         const days: string[] = [];
         if (types === 'timeframe') {
           days.push(daysAgo);
@@ -402,11 +398,11 @@ export class AutomationService {
 
         const conditions: string[] = [];
         for (const day of days) {
-          const [alias, withQuery] = this.generateWith(param, day,adset_id);
+          const [alias, withQuery] = this.generateWith(param, day, adset_id);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
           if (types === 'number') {
-            let condition = `${alias}.${param}`;
+            const condition = `${alias}.${param}`;
             let value = '';
             if (param === 'gross_profit') {
               value = dollarValue;
