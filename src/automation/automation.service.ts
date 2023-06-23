@@ -238,6 +238,7 @@ export class AutomationService {
     try {
       const automations = await this.prisma.automation.findMany({
         where: {
+          OR: [{ nextRun: { lte: new Date() } }],
           status: 'active',
         },
       });
@@ -264,7 +265,7 @@ export class AutomationService {
           if (Array.isArray(res) && res.length > 1) {
 
             // Get a list of AdsetId
-
+            // TODO: Prajjwal
             // Execute API Call
             if (automation.postToDatabase) {
               let apiCallAction = '';
@@ -302,12 +303,14 @@ export class AutomationService {
         currentDate.setMinutes(
           currentDate.getMinutes() + parseInt(automationInMinutes),
         );
-
+        
+        const updatedDate = currentDate;
         // 4. Update NextRun, Update LastRun
         const updateAutomation = await this.prisma.automation.update({
           where: { id: automation.id },
           data: {
             lastRun: new Date(),
+            nextRun: updatedDate
           },
         });
       });
@@ -355,6 +358,7 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
+    this.logger.log(query.toString());
     return query;
   }
 
