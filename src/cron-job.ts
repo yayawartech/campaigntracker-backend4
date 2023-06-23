@@ -38,6 +38,29 @@ export class TrackerCronJob {
     const currentDate = dateTime.format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, currentDate);
     await this.adSetsService.fetchAdSetsDataFromApi();
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM) // 11PM EST
+  async runAutomation(): Promise<void> {
+    if (!this.runCron()) {
+      return;
+    }
+    await this.automationService.runAutomation();
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_10PM) // 6PM EST
+  async runAutomationSecond(): Promise<void> {
+    if (!this.runCron()) {
+      return;
+    }
+    await this.automationService.runAutomation();
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_1PM) // 1AM EST
+  async runAutomationThird(): Promise<void> {
+    if (!this.runCron()) {
+      return;
+    }
     await this.automationService.runAutomation();
   }
 
