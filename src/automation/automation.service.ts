@@ -54,11 +54,10 @@ export class AutomationService {
     );
     // Retrieve the updated date and time
     const updatedDate = currentDate;
-    const jsonRules = JSON.stringify(formattedRows);
     const displayTextOverall = this.createAutomationDisplayText(formattedRows);
     const automationData = await this.prisma.automation.create({
       data: {
-        rules: jsonRules,
+        rules: formattedRows,
         name: createAutomationDto.name,
         automationInMinutes: createAutomationDto.automationInMinutes,
         budgetType: createAutomationDto.budgetType,
@@ -126,7 +125,7 @@ export class AutomationService {
     const formattedAutomations = automations.map((automation) => {
       return {
         id: automation.id,
-        rules: JSON.parse(automation.rules),
+        rules: JSON.parse(JSON.stringify(automation.rules)),
         name: automation.name,
         options: automation.options,
         budgetType: automation.budgetType,
@@ -183,7 +182,7 @@ export class AutomationService {
     // Retrieve the updated date and time
     const updatedDate = currentDate;
     const formattedRows = await Promise.all(formattedRowsPromises);
-    const jsonRules = JSON.stringify(formattedRows);
+    const jsonRules = JSON.parse(JSON.stringify(formattedRows));
     const displayTextOverall = this.createAutomationDisplayText(formattedRows);
     const automation = await this.prisma.automation.update({
       where: { id },
@@ -252,12 +251,17 @@ export class AutomationService {
 
       automations.map(async (automation) => {
         const { automationInMinutes } = automation;
-        const rules = JSON.parse(automation.rules);
+        const rules = JSON.parse(JSON.stringify(automation.rules));
 
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
-        const query = await this.generateQuery(rules, adset_id,adsetTable,reportView);
+        const query = await this.generateQuery(
+          rules,
+          adset_id,
+          adsetTable,
+          reportView,
+        );
         if (query) {
           // Execute the Query.
           const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
@@ -317,7 +321,12 @@ export class AutomationService {
   }
 
   // Service for Query Builder based on automation rules
-  async generateQuery(rules: Rule[], adset_id: string, adsetTable: string, reportView: string): Promise<string> {
+  async generateQuery(
+    rules: Rule[],
+    adset_id: string,
+    adsetTable: string,
+    reportView: string,
+  ): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
       adset_id,
