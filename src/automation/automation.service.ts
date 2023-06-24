@@ -5,7 +5,6 @@ import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
-import { report } from 'process';
 
 interface Rule {
   id: number;
@@ -244,7 +243,6 @@ export class AutomationService {
       const results: boolean[] = [];
       if (automations.length <= 0) {
         this.logger.log('No Rules Matched. Automation will not run..');
-        //return false;
       }
 
       const adset_id = '';
