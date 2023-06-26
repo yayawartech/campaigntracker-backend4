@@ -208,6 +208,12 @@ export class AutomationService {
       data: automation,
     };
   }
+  async testRaw(): Promise<{ message: string }> {
+    const query = `SELECT * FROM AdSets;`;
+    const res = await this.prisma.$queryRaw(Prisma.sql([query]));
+    this.logger.log(res);
+    return { message: 'Hello' };
+  }
 
   async deleteData(id: number): Promise<{ message: string }> {
     const entityToDelete = await this.prisma.automation.findUnique({
@@ -238,6 +244,7 @@ export class AutomationService {
     try {
       const automations = await this.prisma.automation.findMany({
         where: {
+          OR: [{ nextRun: { lte: new Date() } }],
           status: 'active',
         },
       });
@@ -248,8 +255,6 @@ export class AutomationService {
         //return false;
       }
 
-      const adset_id = '';
-
       automations.map(async (automation) => {
         const { automationInMinutes } = automation;
         const rules = JSON.parse(automation.rules);
@@ -257,38 +262,45 @@ export class AutomationService {
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
-        const query = await this.generateQuery(rules, adset_id,adsetTable,reportView);
+        const query = await this.generateQuery(rules, adsetTable, reportView);
         if (query) {
           // Execute the Query.
-          const res = this.prisma.$executeRaw(Prisma.sql`${query}`);
+          const res = this.prisma.$queryRaw(Prisma.sql([query]));
+          this.logger.log(res);
           if (Array.isArray(res) && res.length > 1) {
-            // Execute API Call
-            if (automation.postToDatabase) {
-              let apiCallAction = '';
-              if (automation.options === 'Status') {
-                apiCallAction =
-                  automation.options + ' =>  ' + automation.actionStatus;
-              } else if (automation.budgetType === 'percentage') {
-                apiCallAction =
-                  automation.options +
-                  ' =>  ' +
-                  automation.budgetPercent +
-                  ' %';
-              } else if (automation.budgetType === 'amount') {
-                apiCallAction =
-                  automation.options + ' =>  ' + automation.budgetAmount + ' %';
-              }
+            res.map(({ adSetId }) => {
+              this.logger.log('Execute API CAll');
+              // Execute API Call
+              if (automation.postToDatabase) {
+                let apiCallAction = '';
+                if (automation.options === 'Status') {
+                  apiCallAction =
+                    automation.options + ' =>  ' + automation.actionStatus;
+                } else if (automation.budgetType === 'percentage') {
+                  apiCallAction =
+                    automation.options +
+                    ' =>  ' +
+                    automation.budgetPercent +
+                    ' %';
+                } else if (automation.budgetType === 'amount') {
+                  apiCallAction =
+                    automation.options +
+                    ' =>  ' +
+                    automation.budgetAmount +
+                    ' %';
+                }
 
-              const data = {
-                automationId: automation.id,
-                apiCallAction: apiCallAction,
-                rulesDisplay: automation.displayText,
-                adSetId: adset_id,
-              };
-              this.automationLogService.createAutomationLog(data);
-            } else {
-              this.logger.log('Actual API CALL');
-            }
+                const data = {
+                  automationId: automation.id,
+                  apiCallAction: apiCallAction,
+                  rulesDisplay: automation.displayText,
+                  adSetId: adSetId,
+                };
+                this.automationLogService.createAutomationLog(data);
+              } else {
+                this.logger.log('Actual API CALL');
+              }
+            });
           }
         }
 
@@ -300,11 +312,13 @@ export class AutomationService {
           currentDate.getMinutes() + parseInt(automationInMinutes),
         );
 
+        const updatedDate = currentDate;
         // 4. Update NextRun, Update LastRun
         const updateAutomation = await this.prisma.automation.update({
           where: { id: automation.id },
           data: {
             lastRun: new Date(),
+            nextRun: updatedDate,
           },
         });
       });
@@ -317,11 +331,13 @@ export class AutomationService {
   }
 
   // Service for Query Builder based on automation rules
-  async generateQuery(rules: Rule[], adset_id: string, adsetTable: string, reportView: string): Promise<string> {
+  async generateQuery(
+    rules: Rule[],
+    adsetTable: string,
+    reportView: string,
+  ): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
-      adset_id,
-      adsetTable,
       reportView,
     );
 
@@ -336,7 +352,7 @@ export class AutomationService {
       query += '\n';
     }
 
-    const select = 'SELECT * FROM AdSets t1\n';
+    const select = `SELECT t1.adset_id, t1.daily_budget, t1.status FROM ${adsetTable} t1\n`;
     query += select;
 
     const joinEntries = Object.values(joinList);
@@ -354,13 +370,12 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
+    this.logger.log(query.toString());
     return query;
   }
 
   buildQueryPartials(
     rules: Rule[],
-    adset_id: string,
-    adsetTable: string,
     reportView: string,
   ): [string[], JoinList, WithList] {
     const whereList: string[] = [];
@@ -398,7 +413,7 @@ export class AutomationService {
 
         const conditions: string[] = [];
         for (const day of days) {
-          const [alias, withQuery] = this.generateWith(param, day, adset_id);
+          const [alias, withQuery] = this.generateWith(param, day, reportView);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
           if (types === 'number') {
@@ -435,14 +450,10 @@ export class AutomationService {
   generateWith(
     param: string,
     day: string,
-    adset_id?: string,
+    reportView: string,
   ): [string, string] {
     const alias = param + day;
-    let withQuery = `\t${alias} AS (SELECT * FROM TestData WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY)`;
-    if (adset_id) {
-      const adsetIdCondition = ` AND adset_id = '${adset_id}'`;
-      withQuery += adsetIdCondition;
-    }
+    let withQuery = `\t${alias} AS (SELECT * FROM ${reportView} WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY)`;
     withQuery += ')';
     return [alias, withQuery];
   }
