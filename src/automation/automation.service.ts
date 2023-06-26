@@ -27,6 +27,12 @@ interface WithList {
   [alias: string]: string;
 }
 
+interface QueryResponse {
+  adset_id: string;
+  daily_budget: number;
+  status: string;
+}
+
 @Injectable()
 export class AutomationService {
   constructor(
@@ -253,17 +259,13 @@ export class AutomationService {
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
-        const query = await this.generateQuery(
-          rules,
-          adsetTable,
-          reportView,
-        );
+        const query = await this.generateQuery(rules, adsetTable, reportView);
         if (query) {
           // Execute the Query.
-          const res = this.prisma.$queryRaw(Prisma.sql([query]));
-          this.logger.log(res);
-          if (Array.isArray(res) && res.length > 1) {
-            res.map(({ adSetId }) => {
+          const res: QueryResponse[] = await this.prisma.$queryRaw(Prisma.sql([query]));
+
+          if (Array.isArray(res) && res.length > 0) {
+            res.map((row) => {
               this.logger.log('Execute API CAll');
               // Execute API Call
               if (automation.postToDatabase) {
@@ -289,7 +291,7 @@ export class AutomationService {
                   automationId: automation.id,
                   apiCallAction: apiCallAction,
                   rulesDisplay: automation.displayText,
-                  adSetId: adSetId,
+                  adSetId: row.adset_id,
                 };
                 this.automationLogService.createAutomationLog(data);
               } else {
@@ -365,8 +367,7 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
-    this.logger.log(query.toString());
-    return query;
+    return query.toString();
   }
 
   buildQueryPartials(
