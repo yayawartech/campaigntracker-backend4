@@ -32,6 +32,7 @@ model AdSetsHistory {
   status       String
   adaccount_id String
   name         String
+  country      Json?
   daily_budget Int
   created_time DateTime
   start_time   DateTime
@@ -44,6 +45,7 @@ model AdSets {
   status       String
   adaccount_id String
   name         String
+  country      Json?
   daily_budget Int
   created_time DateTime
   start_time   DateTime

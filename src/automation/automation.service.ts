@@ -5,7 +5,6 @@ import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
-import { rawQuery } from './query';
 
 interface Rule {
   id: number;
@@ -26,6 +25,12 @@ interface JoinList {
 
 interface WithList {
   [alias: string]: string;
+}
+
+interface QueryResponse {
+  adset_id: string;
+  daily_budget: number;
+  status: string;
 }
 
 @Injectable()
@@ -257,49 +262,42 @@ export class AutomationService {
         const query = await this.generateQuery(rules, adsetTable, reportView);
         if (query) {
           // Execute the Query.
-          let res: JSON[] = [];
-          res = await this.prisma.$queryRaw(Prisma.sql([rawQuery]));
+          const res: QueryResponse[] = await this.prisma.$queryRaw(Prisma.sql([query]));
 
-          this.logger.log('Response', res);
+          if (Array.isArray(res) && res.length > 0) {
+            res.map((row) => {
+              this.logger.log('Execute API CAll');
+              // Execute API Call
+              if (automation.postToDatabase) {
+                let apiCallAction = '';
+                if (automation.options === 'Status') {
+                  apiCallAction =
+                    automation.options + ' =>  ' + automation.actionStatus;
+                } else if (automation.budgetType === 'percentage') {
+                  apiCallAction =
+                    automation.options +
+                    ' =>  ' +
+                    automation.budgetPercent +
+                    ' %';
+                } else if (automation.budgetType === 'amount') {
+                  apiCallAction =
+                    automation.options +
+                    ' =>  ' +
+                    automation.budgetAmount +
+                    ' %';
+                }
 
-          if (res.length > 1) {
-            console.log('Response is array');
-
-            // res.map((adSetId) => {
-            //   this.logger.log('Execute API CAll');
-            //   // Execute API Call
-            //   if (automation.postToDatabase) {
-            //     let apiCallAction = '';
-            //     if (automation.options === 'Status') {
-            //       apiCallAction =
-            //         automation.options + ' =>  ' + automation.actionStatus;
-            //     } else if (automation.budgetType === 'percentage') {
-            //       apiCallAction =
-            //         automation.options +
-            //         ' =>  ' +
-            //         automation.budgetPercent +
-            //         ' %';
-            //     } else if (automation.budgetType === 'amount') {
-            //       apiCallAction =
-            //         automation.options +
-            //         ' =>  ' +
-            //         automation.budgetAmount +
-            //         ' %';
-            //     }
-
-            //     const data = {
-            //       automationId: automation.id,
-            //       apiCallAction: apiCallAction,
-            //       rulesDisplay: automation.displayText,
-            //       adSetId: adSetId,
-            //     };
-            //     this.automationLogService.createAutomationLog(data);
-            //   } else {
-            //     this.logger.log('Actual API CALL');
-            //   }
-            // });
-          } else {
-            console.log('It is not an array');
+                const data = {
+                  automationId: automation.id,
+                  apiCallAction: apiCallAction,
+                  rulesDisplay: automation.displayText,
+                  adSetId: row.adset_id,
+                };
+                this.automationLogService.createAutomationLog(data);
+              } else {
+                this.logger.log('Actual API CALL');
+              }
+            });
           }
         }
 
@@ -369,8 +367,7 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
-    this.logger.log('Query', query.toString());
-    return query;
+    return query.toString();
   }
 
   buildQueryPartials(

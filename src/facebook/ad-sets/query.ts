@@ -4,6 +4,7 @@ SELECT *
 from (select status,
              adaccount_id,
              name,
+             country,
              daily_budget,
              created_time,
              start_time,
