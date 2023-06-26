@@ -29,7 +29,7 @@ export class AdSetsService {
           FACEBOOK_API_URL +
           'act_' +
           accountId +
-          '/adsets?fields=status,name,daily_budget,created_time,start_time&limit=400&access_token=' +
+          '/adsets?fields=status,name,daily_budget,created_time,start_time,targeting&limit=400&access_token=' +
           FACEBOOK_ACCESS_TOKEN;
 
         try {
@@ -46,6 +46,7 @@ export class AdSetsService {
                       adset_id: record.id,
                       status: record.status,
                       name: record.name,
+                      country: record.targeting.geo_locations.countries,
                       daily_budget: Number(record.daily_budget),
                       created_time: createdTime,
                       start_time: startTime,

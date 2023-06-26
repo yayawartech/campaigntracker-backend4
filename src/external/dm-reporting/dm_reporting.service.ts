@@ -70,6 +70,7 @@ export class DMReportingService {
                   searches: record.Searches,
                   clicks: record.Clicks,
                   tq: record.TQ,
+                  createdAt: record.createdAt,
                 },
               },
             );
