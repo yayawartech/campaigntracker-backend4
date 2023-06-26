@@ -95,7 +95,7 @@ model DmReporting {
 
 model Automation {
   id        Int      @id @default(autoincrement())
-  rules     String?  @db.Text
+  rules     Json?
   name      String?
   automationInMinutes String?
   options   String?
