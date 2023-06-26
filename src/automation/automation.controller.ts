@@ -58,4 +58,9 @@ export class AutomationController {
   async findAutomation(@Param('id') id: string) {
     return this.automationService.findAutomation(+id);
   }
+
+  @Get('/test')
+  async test() {
+    await this.automationService.runAutomation();
+  }
 }

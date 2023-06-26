@@ -32,6 +32,7 @@ model AdSetsHistory {
   status       String
   adaccount_id String
   name         String
+  country      Json?
   daily_budget Int
   created_time DateTime
   start_time   DateTime
@@ -44,6 +45,7 @@ model AdSets {
   status       String
   adaccount_id String
   name         String
+  country      Json?
   daily_budget Int
   created_time DateTime
   start_time   DateTime
@@ -69,6 +71,7 @@ model DmReportingHistory {
   tq          Int
   start_time  DateTime
   adset_id    String?
+  createdAt DateTime @default(now())
 }
 
 model DmReporting {
@@ -89,13 +92,13 @@ model DmReporting {
   tq          Int
   start_time  DateTime
   adset_id    String?
-
+  createdAt DateTime @default(now())
   @@unique([start_time, adset_id])
 }
 
 model Automation {
   id        Int      @id @default(autoincrement())
-  rules     String?  @db.Text
+  rules     Json?
   name      String?
   automationInMinutes String?
   options   String?
