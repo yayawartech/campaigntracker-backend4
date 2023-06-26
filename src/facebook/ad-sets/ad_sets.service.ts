@@ -46,6 +46,7 @@ export class AdSetsService {
                       adset_id: record.id,
                       status: record.status,
                       name: record.name,
+                      country: record.targeting.geo_locations.countries,
                       daily_budget: Number(record.daily_budget),
                       created_time: createdTime,
                       start_time: startTime,
