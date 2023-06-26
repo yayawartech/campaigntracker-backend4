@@ -1,5 +1,5 @@
 export const SyncQuery = `
-insert into AdSets (status, adaccount_id, name, daily_budget, created_time, start_time, createdAt, adset_id)
+insert into AdSets (status, adaccount_id, name, country,daily_budget, created_time, start_time, createdAt, adset_id)
 SELECT *
 from (select status,
              adaccount_id,
