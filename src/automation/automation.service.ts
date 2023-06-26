@@ -5,6 +5,7 @@ import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
+import { rawQuery } from './query';
 
 interface Rule {
   id: number;
@@ -253,49 +254,52 @@ export class AutomationService {
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
-        const query = await this.generateQuery(
-          rules,
-          adsetTable,
-          reportView,
-        );
+        const query = await this.generateQuery(rules, adsetTable, reportView);
         if (query) {
           // Execute the Query.
-          const res = this.prisma.$queryRaw(Prisma.sql([query]));
-          this.logger.log(res);
-          if (Array.isArray(res) && res.length > 1) {
-            res.map(({ adSetId }) => {
-              this.logger.log('Execute API CAll');
-              // Execute API Call
-              if (automation.postToDatabase) {
-                let apiCallAction = '';
-                if (automation.options === 'Status') {
-                  apiCallAction =
-                    automation.options + ' =>  ' + automation.actionStatus;
-                } else if (automation.budgetType === 'percentage') {
-                  apiCallAction =
-                    automation.options +
-                    ' =>  ' +
-                    automation.budgetPercent +
-                    ' %';
-                } else if (automation.budgetType === 'amount') {
-                  apiCallAction =
-                    automation.options +
-                    ' =>  ' +
-                    automation.budgetAmount +
-                    ' %';
-                }
+          let res: JSON[] = [];
+          res = await this.prisma.$queryRaw(Prisma.sql([rawQuery]));
 
-                const data = {
-                  automationId: automation.id,
-                  apiCallAction: apiCallAction,
-                  rulesDisplay: automation.displayText,
-                  adSetId: adSetId,
-                };
-                this.automationLogService.createAutomationLog(data);
-              } else {
-                this.logger.log('Actual API CALL');
-              }
-            });
+          this.logger.log('Response', res);
+
+          if (res.length > 1) {
+            console.log('Response is array');
+
+            // res.map((adSetId) => {
+            //   this.logger.log('Execute API CAll');
+            //   // Execute API Call
+            //   if (automation.postToDatabase) {
+            //     let apiCallAction = '';
+            //     if (automation.options === 'Status') {
+            //       apiCallAction =
+            //         automation.options + ' =>  ' + automation.actionStatus;
+            //     } else if (automation.budgetType === 'percentage') {
+            //       apiCallAction =
+            //         automation.options +
+            //         ' =>  ' +
+            //         automation.budgetPercent +
+            //         ' %';
+            //     } else if (automation.budgetType === 'amount') {
+            //       apiCallAction =
+            //         automation.options +
+            //         ' =>  ' +
+            //         automation.budgetAmount +
+            //         ' %';
+            //     }
+
+            //     const data = {
+            //       automationId: automation.id,
+            //       apiCallAction: apiCallAction,
+            //       rulesDisplay: automation.displayText,
+            //       adSetId: adSetId,
+            //     };
+            //     this.automationLogService.createAutomationLog(data);
+            //   } else {
+            //     this.logger.log('Actual API CALL');
+            //   }
+            // });
+          } else {
+            console.log('It is not an array');
           }
         }
 
@@ -365,7 +369,7 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
-    this.logger.log(query.toString());
+    this.logger.log('Query', query.toString());
     return query;
   }
 

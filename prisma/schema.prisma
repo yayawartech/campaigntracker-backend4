@@ -69,6 +69,7 @@ model DmReportingHistory {
   tq          Int
   start_time  DateTime
   adset_id    String?
+  createdAt DateTime @default(now())
 }
 
 model DmReporting {
@@ -89,7 +90,7 @@ model DmReporting {
   tq          Int
   start_time  DateTime
   adset_id    String?
-
+  createdAt DateTime @default(now())
   @@unique([start_time, adset_id])
 }
 
