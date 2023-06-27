@@ -33,5 +33,7 @@ export const DataMigrationQuery = `
                              gp          = i.gp,
                              searches    = i.searches,
                              clicks      = i.clicks,
-                             tq          = i.tq
+                             tq          = i.tq,
+                             market      = i.market,
+                             category    = i.category  
 `;
