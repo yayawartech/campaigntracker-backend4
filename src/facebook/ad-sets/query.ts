@@ -17,6 +17,6 @@ from (select status,
 ON DUPLICATE KEY UPDATE status       = i.status,
                         daily_budget = i.daily_budget,
                         createdAt    = i.createdAt
-                        country = i.country
+                        
 
 `;
