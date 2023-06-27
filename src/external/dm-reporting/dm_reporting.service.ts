@@ -54,7 +54,7 @@ export class DMReportingService {
             const createdRecords = this.prismaService.dmReportingHistory.create(
               {
                 data: {
-                  campaign: '',
+                  campaignId: record.Campaign,
                   advertiser: record.Advertiser,
                   domain: record.Domain,
                   manager: manager,
@@ -70,6 +70,8 @@ export class DMReportingService {
                   searches: record.Searches,
                   clicks: record.Clicks,
                   tq: record.TQ,
+                  market: record.Market,
+                  category: record.Category,
                   createdAt: record.createdAt,
                 },
               },
