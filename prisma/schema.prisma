@@ -142,3 +142,9 @@ model AutomationLog{
   adset_id String?
   createdAt DateTime @default(now())
 }
+model CategoryRPC{
+  id Int @id @default(autoincrement())
+  category String?
+  country String?
+  RPC Float?
+}

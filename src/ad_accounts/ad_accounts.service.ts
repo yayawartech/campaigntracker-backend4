@@ -32,7 +32,7 @@ export class AdAccountsService {
     const ad_account = await this.prisma.adAccount.create({
       data: {
         // TODO: Fix this from frontend/backend
-        source: "facebooks",
+        source: 'facebooks',
         accountId: accountId,
         name: name,
         timeZone: timeZone,
@@ -127,7 +127,7 @@ export class AdAccountsService {
       data: adAccountData,
     });
     return {
-      message: 'Ad account deleted successfully',
+      message: 'Ad account Updated successfully',
       data: adAccount,
     };
   }

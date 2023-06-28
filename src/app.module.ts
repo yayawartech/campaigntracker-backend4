@@ -14,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { AutomationModule } from './automation/automation.module';
 import { AutomationlogModule } from './automationlog/automationlog.module';
+import { CategoryRpcModule } from './category-rpc/category-rpc.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AutomationlogModule } from './automationlog/automationlog.module';
     PrismaModule,
     AutomationModule,
     AutomationlogModule,
+    CategoryRpcModule,
   ],
   controllers: [AppController],
   providers: [AppService, TrackerCronJob, Logger, PrismaService],

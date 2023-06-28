@@ -11,7 +11,14 @@ SELECT
   ) AS `margin`,
   sum(`t1`.`link_clicks`) AS `clicks`,
   `t2`.`daily_budget` AS `daily_budget`,
-(to_days(NOW()) - to_days(`t2`.`start_time`)) AS `daysPassed`
+(to_days(NOW()) - to_days(`t2`.`start_time`)) AS `daysPassed`,
+(
+  SELECT RPC
+  FROM tracker.CategoryRPC
+  WHERE category = `t1`.`category` AND country = `t1`.`market`
+  LIMIT 1
+) AS `categoryRPC`,
+(sum(`t1`.`revenue`) / sum(`t1`.`ad_clicks`)) AS `averageRPC`
 FROM
   (
     `tracker`.`dmreporting` `t1`
@@ -19,4 +26,6 @@ FROM
   )
 GROUP BY
   cast(`t1`.`start_time` AS date),
-  `t1`.`adset_id`
+  `t1`.`adset_id`,
+  `t1`. `category`,
+  `t1`. `market`

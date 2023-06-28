@@ -39,6 +39,7 @@ export class DMReportingService {
     params.append('startDate', startDate);
     params.append('endDate', endDate);
     const url = DM_REPORTING_URL + params.toString();
+    console.log(url);
     try {
       this.logger.log(
         `Started cron job for History DM Reporting API ${startDate}-${endDate}`,
