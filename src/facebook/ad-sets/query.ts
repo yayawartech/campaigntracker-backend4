@@ -16,7 +16,6 @@ from (select status,
                    GROUP BY AdSetsHistory.adset_id)) i
 ON DUPLICATE KEY UPDATE status       = i.status,
                         daily_budget = i.daily_budget,
-                        createdAt    = i.createdAt
-                        
-
+                        createdAt    = i.createdAt,
+                        country = i.country
 `;
