@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { CategoryRpcService } from './category-rpc.service';
 import { CategoryRPCdto } from './dto/Category-RPC.dto';
+
 @Controller('category-rpc')
 export class CategoryRpcController {
   constructor(private readonly categoryRPCService: CategoryRpcService) {}
@@ -31,12 +32,12 @@ export class CategoryRpcController {
     return this.categoryRPCService.findCategoryRPC(+id);
   }
 
-  @Delete('id')
+  @Delete(':id')
   async deleteCategoryRPC(@Param('id') id: string) {
     return this.categoryRPCService.deleteCategoryRPC(+id);
   }
 
-  @Put('id')
+  @Put(':id')
   async updateCategoryRPC(
     @Body() categoryRPCData: CategoryRPCdto,
     @Param('id') id: string,

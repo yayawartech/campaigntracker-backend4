@@ -23,7 +23,7 @@ export class AdAccountsService {
     if (exists) {
       throw new HttpException(
         {
-          message: 'Ad Account already exists aaa',
+          message: 'Ad Account already exists',
         },
         HttpStatus.CONFLICT,
       );
