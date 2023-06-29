@@ -114,6 +114,27 @@ export class AutomationService {
     if ('percentValue' in data && data['percentValue']) {
       display_text += data.percentValue + '%';
     }
+    if ('valuesAdclicks' in data && data['valuesAdclicks']) {
+      display_text += data.valuesAdclicks + ' ';
+    }
+    if ('budgetAdjustment' in data && data['budgetAdjustment']) {
+      display_text += data.budgetAdjustment + ' ';
+    }
+    if ('averageRPC' in data && data['averageRPC']) {
+      display_text += data.averageRPC + ' ';
+    }
+    if ('categoryRPC' in data && data['categoryRPC']) {
+      display_text += data.categoryRPC + ' ';
+    }
+    if ('parameters' in data && data['parameters']) {
+      display_text += data.parameters + ' ';
+    }
+    if ('percentageOfTimeFrame' in data && data['percentageOfTimeFrame']) {
+      display_text += data.percentageOfTimeFrame + '% of ';
+    }
+    if ('daysOfTimeFrame' in data && data['daysOfTimeFrame']) {
+      display_text += data.daysOfTimeFrame + ' days ago ';
+    }
     return { ...data, displayText: display_text };
   }
 
@@ -262,7 +283,9 @@ export class AutomationService {
         const query = await this.generateQuery(rules, adsetTable, reportView);
         if (query) {
           // Execute the Query.
-          const res: QueryResponse[] = await this.prisma.$queryRaw(Prisma.sql([query]));
+          const res: QueryResponse[] = await this.prisma.$queryRaw(
+            Prisma.sql([query]),
+          );
 
           if (Array.isArray(res) && res.length > 0) {
             res.map((row) => {
