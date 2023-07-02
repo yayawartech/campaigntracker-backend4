@@ -8,15 +8,22 @@ import { AutomationlogService } from 'src/automationlog/automationlog.service';
 
 interface Rule {
   id: number;
-  param: string;
   days?: string;
-  operand: string;
   types: string;
+  param: string;
   daysAgo: string;
-  daysCompareTo: string;
+  operand: string;
+  averageRPC: string;
+  parameters: string;
+  categoryRPC: string;
+  display_text: string;
   dollarValue: string;
   percentValue: string;
-  display_text: string;
+  daysCompareTo: string;
+  valuesAdclicks: string;
+  daysOfTimeFrame: string;
+  budgetAdjustment: string;
+  percentageOfTimeFrame: string;
 }
 
 interface JoinList {
@@ -113,6 +120,27 @@ export class AutomationService {
     }
     if ('percentValue' in data && data['percentValue']) {
       display_text += data.percentValue + '%';
+    }
+    if ('valuesAdclicks' in data && data['valuesAdclicks']) {
+      display_text += data.valuesAdclicks + ' ';
+    }
+    if ('budgetAdjustment' in data && data['budgetAdjustment']) {
+      display_text += data.budgetAdjustment + ' ';
+    }
+    if ('averageRPC' in data && data['averageRPC']) {
+      display_text += data.averageRPC + ' ';
+    }
+    if ('categoryRPC' in data && data['categoryRPC']) {
+      display_text += data.categoryRPC + ' ';
+    }
+    if ('parameters' in data && data['parameters']) {
+      display_text += data.parameters + ' ';
+    }
+    if ('percentageOfTimeFrame' in data && data['percentageOfTimeFrame']) {
+      display_text += data.percentageOfTimeFrame + '% of ';
+    }
+    if ('daysOfTimeFrame' in data && data['daysOfTimeFrame']) {
+      display_text += data.daysOfTimeFrame + ' days ago ';
     }
     return { ...data, displayText: display_text };
   }
@@ -262,13 +290,15 @@ export class AutomationService {
         const query = await this.generateQuery(rules, adsetTable, reportView);
         if (query) {
           // Execute the Query.
-          const res: QueryResponse[] = await this.prisma.$queryRaw(Prisma.sql([query]));
+          const res: QueryResponse[] = await this.prisma.$queryRaw(
+            Prisma.sql([query]),
+          );
 
           if (Array.isArray(res) && res.length > 0) {
             res.map((row) => {
-              this.logger.log('Execute API CAll');
               // Execute API Call
               if (automation.postToDatabase) {
+                this.logger.log('Execute API CAll, Postint to database..');
                 let apiCallAction = '';
                 if (automation.options === 'Status') {
                   apiCallAction =
@@ -295,6 +325,7 @@ export class AutomationService {
                 };
                 this.automationLogService.createAutomationLog(data);
               } else {
+                // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
               }
             });
@@ -367,6 +398,7 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
+    this.logger.log(query.toString())
     return query.toString();
   }
 
@@ -391,6 +423,40 @@ export class AutomationService {
         const value = rule.daysCompareTo;
         const condition = '(TO_DAYS(NOW()) - TO_DAYS(t1.start_time))';
         whereList.push(this.generateWhere(condition, operand, value));
+      } else if (param === 'ad_clicks'){
+        // generateWith
+        const [alias, withQuery] = this.generateWith(param, reportView);
+        withList[alias] = withQuery;
+
+        // generateJoin
+        joinList[alias] = this.generateJoin(alias);
+
+        // generateWhere
+        const operand = rule.operand;
+        const value = rule.valuesAdclicks;
+        const condition = `${alias}.total_clicks`;
+
+        whereList.push(this.generateWhere(condition,operand,value))
+    
+      } else if (param === 'average_rpc'){
+
+        // generateWith
+        const [alias, withQuery] = this.generateWith(param, reportView);
+        withList[alias] = withQuery;
+
+        // generateJoin
+        joinList[alias] = this.generateJoin(alias);
+
+        // generateWhere
+        const operand = rule.operand;
+        const condition = `${alias}.average_rpc`;
+        const value = rule.parameters;
+        whereList.push(this.generateWhere(condition,operand,value))
+
+      } else if (param === 'category_rpc'){
+
+        //TODO 
+      
       } else if (param === 'margin' || param === 'gross_profit') {
         const operand = rule.operand;
         const types = rule.types;
@@ -409,7 +475,7 @@ export class AutomationService {
 
         const conditions: string[] = [];
         for (const day of days) {
-          const [alias, withQuery] = this.generateWith(param, day, reportView);
+          const [alias, withQuery] = this.generateWith(param, reportView, day);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
           if (types === 'number') {
@@ -432,6 +498,8 @@ export class AutomationService {
             this.generateWhere(conditions[0], operand, conditions[1]),
           );
         }
+
+        //TODO For Percentage of Timeframe
       }
     }
 
@@ -445,12 +513,25 @@ export class AutomationService {
 
   generateWith(
     param: string,
-    day: string,
-    reportView: string,
+    reportView?: string,
+    day?: string,
   ): [string, string] {
-    const alias = param + day;
-    let withQuery = `\t${alias} AS (SELECT * FROM ${reportView} WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY)`;
-    withQuery += ')';
+    let alias = '';
+    let withQuery = '';
+    if (param === 'ad_clicks'){
+      alias = param;
+      withQuery = `\t${alias} AS (SELECT adset_id,sum(clicks) as total_clicks FROM ${reportView} GROUP BY adset_id`;
+      withQuery += ')';
+    } else if (param === 'average_rpc' || param === 'category_rpc') {
+      alias = 'vSpend';
+      withQuery = `\t${alias} AS (SELECT adset_id, categoryRPC as category_rpc, averageRPC as average_rpc FROM ${reportView}`;
+      withQuery += ')';
+    } else {
+      alias = param + day;
+      withQuery = `\t${alias} AS (SELECT * FROM ${reportView} WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY)`;
+       withQuery += ')';
+    }
+    
     return [alias, withQuery];
   }
 
