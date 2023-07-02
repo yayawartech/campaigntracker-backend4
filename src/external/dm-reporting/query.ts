@@ -1,6 +1,6 @@
 export const DataMigrationQuery = `
-    INSERT INTO DmReporting (advertiser, domain, manager, buyer, start_time, campaign, adset, adset_id, revenue, spend,
-                             link_clicks, ad_clicks, gp, searches, clicks, tq,createdAt)
+    INSERT INTO DmReporting (advertiser, domain, manager, buyer, start_time, campaignId, adset, adset_id, revenue, spend,
+                             link_clicks, ad_clicks, gp, searches, clicks, tq,market,category,createdAt)
 
     SELECT *
     from (SELECT advertiser,
@@ -8,7 +8,7 @@ export const DataMigrationQuery = `
               manager,
               buyer,
               start_time,
-              campaign,
+              campaignId,
               adset,
               adset_id,
               revenue,
@@ -19,6 +19,8 @@ export const DataMigrationQuery = `
               searches,
               clicks,
               tq,
+              market,
+              category,
               createdAt
           FROM DmReportingHistory
           WHERE id IN (SELECT max(id)
@@ -31,5 +33,7 @@ export const DataMigrationQuery = `
                              gp          = i.gp,
                              searches    = i.searches,
                              clicks      = i.clicks,
-                             tq          = i.tq
+                             tq          = i.tq,
+                             market      = i.market,
+                             category    = i.category  
 `;

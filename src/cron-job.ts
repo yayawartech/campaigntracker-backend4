@@ -7,6 +7,7 @@ import { RUN_CRON } from './config';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { PrismaService } from './prisma/prisma.service';
 dayjs.extend(timezone);
 dayjs.extend(utc);
 @Injectable()
@@ -16,6 +17,7 @@ export class TrackerCronJob {
     private readonly dmReportingCronService: DMReportingService,
     private readonly adSetsService: AdSetsService,
     private readonly automationService: AutomationService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Cron(CronExpression.EVERY_12_HOURS)
@@ -45,6 +47,11 @@ export class TrackerCronJob {
     if (!this.runCron()) {
       return;
     }
+    const dateTime = dayjs().tz('America/New_York');
+    const currentDate = dateTime.format('YYYY-MM-DD');
+    const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
+    await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
+    await this.adSetsService.fetchAdSetsDataFromApi();
     await this.automationService.runAutomation();
   }
 
@@ -53,6 +60,11 @@ export class TrackerCronJob {
     if (!this.runCron()) {
       return;
     }
+    const dateTime = dayjs().tz('America/New_York');
+    const currentDate = dateTime.format('YYYY-MM-DD');
+    const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
+    await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
+    await this.adSetsService.fetchAdSetsDataFromApi();
     await this.automationService.runAutomation();
   }
 
@@ -61,6 +73,11 @@ export class TrackerCronJob {
     if (!this.runCron()) {
       return;
     }
+    const dateTime = dayjs().tz('America/New_York');
+    const currentDate = dateTime.format('YYYY-MM-DD');
+    const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
+    await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
+    await this.adSetsService.fetchAdSetsDataFromApi();
     await this.automationService.runAutomation();
   }
 
@@ -68,5 +85,35 @@ export class TrackerCronJob {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return RUN_CRON === 'yes';
+  }
+
+  //Delete Data which is older than 2 days from DmReportingHistory and AdSetHistory
+
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async cronToDelete(): Promise<void> {
+    if (!this.runCron()) {
+      return;
+    }
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+    //Delete Data from DmReportingHistory
+    await this.prisma.dmReportingHistory.deleteMany({
+      where: {
+        createdAt: {
+          lt: twoDaysAgo,
+        },
+      },
+    });
+
+    //Delete Data From AdSetHistory
+
+    await this.prisma.adSetsHistory.deleteMany({
+      where: {
+        createdAt: {
+          lt: twoDaysAgo,
+        },
+      },
+    });
   }
 }

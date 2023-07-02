@@ -59,7 +59,7 @@ model DmReportingHistory {
   domain      String
   manager     String?
   buyer       String
-  campaign    String
+  campaignId  String
   adset       String?
   revenue     Float
   spend       Float
@@ -71,6 +71,8 @@ model DmReportingHistory {
   tq          Int
   start_time  DateTime
   adset_id    String?
+  market      String?
+  category    String?
   createdAt DateTime @default(now())
 }
 
@@ -80,7 +82,7 @@ model DmReporting {
   domain      String
   manager     String?
   buyer       String
-  campaign    String
+  campaignId  String
   adset       String?
   revenue     Float
   spend       Float
@@ -92,6 +94,8 @@ model DmReporting {
   tq          Int
   start_time  DateTime
   adset_id    String?
+  market      String?
+  category    String?
   createdAt DateTime @default(now())
   @@unique([start_time, adset_id])
 }
@@ -137,4 +141,10 @@ model AutomationLog{
   action String? @db.Text
   adset_id String?
   createdAt DateTime @default(now())
+}
+model CategoryRPC{
+  id Int @id @default(autoincrement())
+  category String?
+  country String?
+  RPC Float?
 }

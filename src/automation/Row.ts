@@ -9,4 +9,11 @@ export interface Row {
   daysCompareTo: string;
   percentValue: string;
   displayText: string;
+  valuesAdclicks: string;
+  budgetAdjustment: string;
+  averageRPC: string;
+  categoryRPC: string;
+  parameters: string;
+  percentageOfTimeFrame: string;
+  daysOfTimeFrame: string;
 }
