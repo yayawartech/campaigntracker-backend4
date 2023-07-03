@@ -9,7 +9,7 @@ import { AutomationlogService } from 'src/automationlog/automationlog.service';
 interface Rule {
   id: number;
   days?: string;
-  types: string;
+  type: string;
   param: string;
   daysAgo: string;
   operand: string;
@@ -457,18 +457,22 @@ export class AutomationService {
 
         //TODO 
       
-      } else if (param === 'margin' || param === 'gross_profit') {
+      } else if (param === 'margin' || param === 'profit') {
         const operand = rule.operand;
-        const types = rule.types;
+        const types = rule.type;
         const daysAgo = rule.daysAgo;
         const daysCompareTo = rule.daysCompareTo;
         const percentValue = rule.percentValue;
         const dollarValue = rule.dollarValue;
+        const daysOfTimeFrame = rule.daysOfTimeFrame;
+        const percentageOfTimeFrame = rule.percentageOfTimeFrame;
+
 
         const days: string[] = [];
-        if (types === 'timeframe') {
+        if (types === 'timeframe' || types === 'percentageOfTimeFrame') {
           days.push(daysAgo);
           days.push(daysCompareTo);
+          days.push(daysOfTimeFrame);
         } else {
           days.push(daysAgo);
         }
@@ -478,13 +482,17 @@ export class AutomationService {
           const [alias, withQuery] = this.generateWith(param, reportView, day);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
-          if (types === 'number') {
+          if (types === 'number' || types === "percentageOfTimeFrame") {
             const condition = `${alias}.${param}`;
             let value = '';
-            if (param === 'gross_profit') {
+            if (param === 'profit') {
               value = dollarValue;
             } else {
               value = percentValue;
+            }
+
+            if (types === "percentageOfTimeFrame") {
+              value = ((+percentageOfTimeFrame / 100) * +value).toString();
             }
             whereList.push(this.generateWhere(condition, operand, value));
           } else {
@@ -498,8 +506,6 @@ export class AutomationService {
             this.generateWhere(conditions[0], operand, conditions[1]),
           );
         }
-
-        //TODO For Percentage of Timeframe
       }
     }
 
