@@ -112,7 +112,7 @@ model Automation {
   budgetAmount String?
   lastRun DateTime?
   nextRun DateTime?
-  displayText String?
+  displayText String? @db.Text
   postToDatabase  Boolean  @default(true)
   status  String?
   createdAt DateTime @default(now())
