@@ -481,12 +481,11 @@ export class AutomationService {
         const percentageOfTimeFrame = rule.percentageOfTimeFrame;
 
         const days: string[] = [];
-        if (types === 'timeframe' || types === 'percentageOfTimeFrame') {
-          days.push(daysAgo);
-          days.push(daysCompareTo);
-          days.push(daysOfTimeFrame);
+        if (types === 'timeframe') {
+          if (daysAgo) days.push(daysAgo);
+          if (daysCompareTo) days.push(daysCompareTo);
         } else {
-          days.push(daysAgo);
+          if (daysAgo) days.push(daysAgo);
         }
 
         const conditions: string[] = [];
@@ -494,7 +493,7 @@ export class AutomationService {
           const [alias, withQuery] = this.generateWith(param, reportView, day);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
-          if (types === 'number' || types === 'percentageOfTimeFrame') {
+          if (types === 'number') {
             const condition = `${alias}.${param}`;
             let value = '';
             if (param === 'profit') {
@@ -502,15 +501,30 @@ export class AutomationService {
             } else {
               value = percentValue;
             }
-
-            if (types === 'percentageOfTimeFrame') {
-              value = ((+percentageOfTimeFrame / 100) * +value).toString();
-            }
             whereList.push(this.generateWhere(condition, operand, value));
           } else {
             const condition = `${alias}.${param}`;
             conditions.push(condition);
           }
+        }
+
+        if (types === 'percentageOfTimeFrame') {
+          const day1 =  rule.daysAgo;
+          const day2 = rule.daysOfTimeFrame;
+          const percentageVal = +percentageOfTimeFrame / 100;
+          const [alias1, withQuery1] = this.generateWith(param, reportView, day1);
+          const [alias2, withQuery2] = this.generateWith(param, reportView, day2);
+
+          withList[alias1] = withQuery1;
+          withList[alias2] = withQuery2;
+          joinList[alias1] = this.generateJoin(alias1);
+          joinList[alias2] = this.generateJoin(alias2);
+
+          const condition = `${alias1}.${param}`;
+          const value = `${percentageVal} * ${alias2}.${param}`;
+          const operator = operand;
+
+          whereList.push(this.generateWhere(condition,operator,value));
         }
 
         if (types === 'timeframe') {
