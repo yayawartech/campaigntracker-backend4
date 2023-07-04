@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Query,
+} from '@nestjs/common';
 import { Automation, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
@@ -288,6 +294,7 @@ export class AutomationService {
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
         const query = await this.generateQuery(rules, adsetTable, reportView);
+        this.logger.log('Query', query);
         if (query) {
           // Execute the Query.
           const res: QueryResponse[] = await this.prisma.$queryRaw(
@@ -398,7 +405,7 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
-    this.logger.log(query.toString())
+    this.logger.log(query.toString());
     return query.toString();
   }
 
@@ -423,7 +430,7 @@ export class AutomationService {
         const value = rule.daysCompareTo;
         const condition = '(TO_DAYS(NOW()) - TO_DAYS(t1.start_time))';
         whereList.push(this.generateWhere(condition, operand, value));
-      } else if (param === 'ad_clicks'){
+      } else if (param === 'ad_clicks') {
         // generateWith
         const [alias, withQuery] = this.generateWith(param, reportView);
         withList[alias] = withQuery;
@@ -436,10 +443,8 @@ export class AutomationService {
         const value = rule.valuesAdclicks;
         const condition = `${alias}.total_clicks`;
 
-        whereList.push(this.generateWhere(condition,operand,value))
-    
-      } else if (param === 'average_rpc'){
-
+        whereList.push(this.generateWhere(condition, operand, value));
+      } else if (param === 'average_rpc') {
         // generateWith
         const [alias, withQuery] = this.generateWith(param, reportView);
         withList[alias] = withQuery;
@@ -451,12 +456,20 @@ export class AutomationService {
         const operand = rule.operand;
         const condition = `${alias}.average_rpc`;
         const value = rule.parameters;
-        whereList.push(this.generateWhere(condition,operand,value))
+        whereList.push(this.generateWhere(condition, operand, value));
+      } else if (param === 'category_rpc') {
+        // generateWith
+        const [alias, withQuery] = this.generateWith(param, reportView);
+        withList[alias] = withQuery;
 
-      } else if (param === 'category_rpc'){
+        // generateJoin
+        joinList[alias] = this.generateJoin(alias);
 
-        //TODO 
-      
+        // generateWhere
+        const operand = rule.operand;
+        const condition = `${alias}.average_rpc`;
+        const value = rule.parameters;
+        whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'margin' || param === 'profit') {
         const operand = rule.operand;
         const types = rule.type;
@@ -466,7 +479,6 @@ export class AutomationService {
         const dollarValue = rule.dollarValue;
         const daysOfTimeFrame = rule.daysOfTimeFrame;
         const percentageOfTimeFrame = rule.percentageOfTimeFrame;
-
 
         const days: string[] = [];
         if (types === 'timeframe' || types === 'percentageOfTimeFrame') {
@@ -482,7 +494,7 @@ export class AutomationService {
           const [alias, withQuery] = this.generateWith(param, reportView, day);
           withList[alias] = withQuery;
           joinList[alias] = this.generateJoin(alias);
-          if (types === 'number' || types === "percentageOfTimeFrame") {
+          if (types === 'number' || types === 'percentageOfTimeFrame') {
             const condition = `${alias}.${param}`;
             let value = '';
             if (param === 'profit') {
@@ -491,7 +503,7 @@ export class AutomationService {
               value = percentValue;
             }
 
-            if (types === "percentageOfTimeFrame") {
+            if (types === 'percentageOfTimeFrame') {
               value = ((+percentageOfTimeFrame / 100) * +value).toString();
             }
             whereList.push(this.generateWhere(condition, operand, value));
@@ -524,7 +536,7 @@ export class AutomationService {
   ): [string, string] {
     let alias = '';
     let withQuery = '';
-    if (param === 'ad_clicks'){
+    if (param === 'ad_clicks') {
       alias = param;
       withQuery = `\t${alias} AS (SELECT adset_id,sum(clicks) as total_clicks FROM ${reportView} GROUP BY adset_id`;
       withQuery += ')';
@@ -535,9 +547,9 @@ export class AutomationService {
     } else {
       alias = param + day;
       withQuery = `\t${alias} AS (SELECT * FROM ${reportView} WHERE reportDate = DATE_SUB(CURDATE(), INTERVAL ${day} DAY)`;
-       withQuery += ')';
+      withQuery += ')';
     }
-    
+
     return [alias, withQuery];
   }
 
