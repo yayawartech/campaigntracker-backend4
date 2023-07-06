@@ -19,9 +19,10 @@ export class AutomationlogService {
       return await this.prisma.automationLog.create({
         data: {
           automationId: log_data.automationId,
-          action: log_data.apiCallAction,
+          actionDisplayText: log_data.actionDisplayText,
           rules: log_data.rulesDisplay,
           adset_id: log_data.adSetId,
+          action: log_data.action,
         },
       });
     } catch (error) {

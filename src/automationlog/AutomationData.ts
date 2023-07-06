@@ -3,7 +3,8 @@ import { Row } from 'src/automation/Row';
 
 export interface AutomationData {
   automationId: number;
-  apiCallAction: string;
+  actionDisplayText: string;
   rulesDisplay: string;
   adSetId: string;
+  action: string;
 }
