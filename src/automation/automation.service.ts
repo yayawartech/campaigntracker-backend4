@@ -295,7 +295,7 @@ export class AutomationService {
         // For each row, generateQuery.
         const query = await this.generateQuery(rules, adsetTable, reportView);
         this.logger.log('Query', query);
-        if (query) {
+        if (!query) {
           // Execute the Query.
           const res: QueryResponse[] = await this.prisma.$queryRaw(
             Prisma.sql([query]),
@@ -306,29 +306,41 @@ export class AutomationService {
               // Execute API Call
               if (automation.postToDatabase) {
                 this.logger.log('Execute API CAll, Postint to database..');
-                let apiCallAction = '';
+                let actionDisplayText = '';
+                let action = '';
                 if (automation.options === 'Status') {
-                  apiCallAction =
+                  actionDisplayText =
                     automation.options + ' =>  ' + automation.actionStatus;
                 } else if (automation.budgetType === 'percentage') {
-                  apiCallAction =
+                  actionDisplayText =
                     automation.options +
                     ' =>  ' +
                     automation.budgetPercent +
                     ' %';
                 } else if (automation.budgetType === 'amount') {
-                  apiCallAction =
+                  actionDisplayText =
                     automation.options +
                     ' =>  ' +
                     automation.budgetAmount +
                     ' %';
                 }
 
+                if (automation.options === 'Status') {
+                  action = 'Status Adjusted';
+                }
+                if (
+                  automation.options === 'Budget Increase' ||
+                  automation.options === 'Budget Decrease'
+                ) {
+                  action = 'Budget Adjusted';
+                }
+
                 const data = {
                   automationId: automation.id,
-                  apiCallAction: apiCallAction,
+                  actionDisplayText: actionDisplayText,
                   rulesDisplay: automation.displayText,
                   adSetId: row.adset_id,
+                  action: action,
                 };
                 this.automationLogService.createAutomationLog(data);
               } else {
@@ -509,11 +521,19 @@ export class AutomationService {
         }
 
         if (types === 'percentageOfTimeFrame') {
-          const day1 =  rule.daysAgo;
+          const day1 = rule.daysAgo;
           const day2 = rule.daysOfTimeFrame;
           const percentageVal = +percentageOfTimeFrame / 100;
-          const [alias1, withQuery1] = this.generateWith(param, reportView, day1);
-          const [alias2, withQuery2] = this.generateWith(param, reportView, day2);
+          const [alias1, withQuery1] = this.generateWith(
+            param,
+            reportView,
+            day1,
+          );
+          const [alias2, withQuery2] = this.generateWith(
+            param,
+            reportView,
+            day2,
+          );
 
           withList[alias1] = withQuery1;
           withList[alias2] = withQuery2;
@@ -524,13 +544,48 @@ export class AutomationService {
           const value = `${percentageVal} * ${alias2}.${param}`;
           const operator = operand;
 
-          whereList.push(this.generateWhere(condition,operator,value));
+          whereList.push(this.generateWhere(condition, operator, value));
         }
 
         if (types === 'timeframe') {
           whereList.push(
             this.generateWhere(conditions[0], operand, conditions[1]),
           );
+        }
+      } else if (param === 'rpc') {
+        const operand = rule.operand;
+        const parameters = rule.parameters;
+        const daysAgo = rule.daysAgo;
+        const types = rule.type;
+
+        const days: string[] = [];
+        if (types === 'parameter') {
+          if (daysAgo) {
+            days.push(daysAgo);
+          } else {
+            days.push(daysAgo);
+          }
+        }
+
+        const conditions: string[] = [];
+
+        for (const day of days) {
+          const [alias, withQuery] = this.generateWith(param, reportView, day);
+          withList[alias] = withQuery;
+          joinList[alias] = this.generateJoin(alias);
+
+          if (types === 'parameter') {
+            const conditions = `${alias}.${param}`;
+            let value = '';
+
+            if (param === 'rpc') {
+              value = parameters;
+            }
+            whereList.push(this.generateWhere(conditions, operand, value));
+          } else {
+            const condition = `${alias}.${param}`;
+            conditions.push(condition);
+          }
         }
       }
     }

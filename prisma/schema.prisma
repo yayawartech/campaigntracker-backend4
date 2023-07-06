@@ -140,6 +140,7 @@ model AutomationLog{
   rules String? @db.Text
   action String? @db.Text
   adset_id String?
+  actionDisplayText String?
   createdAt DateTime @default(now())
 }
 model CategoryRPC{
