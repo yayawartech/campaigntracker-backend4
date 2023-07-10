@@ -276,7 +276,6 @@ export class AutomationService {
     try {
       const automations = await this.prisma.automation.findMany({
         where: {
-          OR: [{ nextRun: { lte: new Date() } }],
           status: 'active',
         },
       });
@@ -286,23 +285,27 @@ export class AutomationService {
         this.logger.log('No Rules Matched. Automation will not run..');
       }
 
-      automations.map(async (automation) => {
+      for (let i = 0; i < automations.length; i++) {
+        const automation = automations[i];
         const { automationInMinutes } = automation;
         const rules = JSON.parse(JSON.stringify(automation.rules));
-
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
         const query = await this.generateQuery(rules, adsetTable, reportView);
-        this.logger.log('Query', query);
-        if (!query) {
-          // Execute the Query.
-          const res: QueryResponse[] = await this.prisma.$queryRaw(
-            Prisma.sql([query]),
-          );
+        if (query) {
+          let res: QueryResponse[] = [];
+          try {
+            // Execute the Query.
+            res = await this.prisma.$queryRaw(Prisma.sql([query]));
+          } catch (e) {
+            this.logger.log('Query', query);
+            // console.log(e.toString());
+            continue;
+          }
 
           if (Array.isArray(res) && res.length > 0) {
-            res.map((row) => {
+            res.map(async (row) => {
               // Execute API Call
               if (automation.postToDatabase) {
                 this.logger.log('Execute API CAll, Postint to database..');
@@ -342,7 +345,7 @@ export class AutomationService {
                   adSetId: row.adset_id,
                   action: action,
                 };
-                this.automationLogService.createAutomationLog(data);
+                await this.automationLogService.createAutomationLog(data);
               } else {
                 // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
@@ -359,16 +362,14 @@ export class AutomationService {
           currentDate.getMinutes() + parseInt(automationInMinutes),
         );
 
-        const updatedDate = currentDate;
         // 4. Update NextRun, Update LastRun
         const updateAutomation = await this.prisma.automation.update({
           where: { id: automation.id },
           data: {
             lastRun: new Date(),
-            nextRun: updatedDate,
           },
         });
-      });
+      }
 
       this.logger.log('End Cron Job for Run Automation');
       return results.includes(false) ? false : true;
@@ -417,7 +418,6 @@ export class AutomationService {
     }
 
     query += whereClause + ';';
-    this.logger.log(query.toString());
     return query.toString();
   }
 

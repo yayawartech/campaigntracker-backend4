@@ -7,10 +7,7 @@ import {
   Post,
   Put,
   Query,
-  Res,
 } from '@nestjs/common';
-import { Req } from '@nestjs/common';
-import { Request, Response } from 'express';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { AutomationService } from './automation.service';
 
