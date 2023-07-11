@@ -271,7 +271,7 @@ export class AutomationService {
   }
 
   //Run Automation
-  async runAutomation(): Promise<boolean> {
+  async runAutomation(country: string): Promise<boolean> {
     this.logger.log('Started Cron Job for RunAutomation');
     try {
       const automations = await this.prisma.automation.findMany({

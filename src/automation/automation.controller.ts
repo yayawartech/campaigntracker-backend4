@@ -48,16 +48,11 @@ export class AutomationController {
 
   @Get('/test')
   async runAutomation() {
-    return this.automationService.runAutomation();
+    return this.automationService.runAutomation('USA');
   }
 
   @Get(':id')
   async findAutomation(@Param('id') id: string) {
     return this.automationService.findAutomation(+id);
-  }
-
-  @Get('/test')
-  async test() {
-    await this.automationService.runAutomation();
   }
 }
