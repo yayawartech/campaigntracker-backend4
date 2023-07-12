@@ -18,6 +18,7 @@ SELECT
   WHERE `category` = `t1`.`category` AND `country` = `t1`.`market`
   LIMIT 1
 ) AS `categoryRPC`,
+`t1`.`market` as country,
 (sum(`t1`.`revenue`) / sum(`t1`.`ad_clicks`)) AS `averageRPC`
 FROM
   (
@@ -28,4 +29,4 @@ GROUP BY
   cast(`t1`.`start_time` AS date),
   `t1`.`adset_id`,
   `t1`.`category`,
-  `t1`.`country
+  `t1`.`market`
