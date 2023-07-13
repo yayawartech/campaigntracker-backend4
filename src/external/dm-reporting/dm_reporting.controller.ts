@@ -59,7 +59,7 @@ export class DMReportingController {
   async test() {
     const dateTime = dayjs();
     for (let i = 0; i < 10; i++) {
-      const startDate = dateTime.subtract(0, 'day').format('YYYY-MM-DD');
+      const startDate = dateTime.subtract(i, 'day').format('YYYY-MM-DD');
       await this.dmReportingService.fetchExternalApiData(startDate, startDate);
     }
     // const startDate = '2023-06-14';
