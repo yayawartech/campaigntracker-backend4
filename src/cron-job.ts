@@ -52,7 +52,7 @@ export class TrackerCronJob {
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
     await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation('USA');
+    await this.automationService.runAutomation();
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_10PM) // 6PM EST
@@ -65,7 +65,7 @@ export class TrackerCronJob {
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
     await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation('UK');
+    await this.automationService.runAutomation();
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_1PM) // 1AM EST
@@ -78,7 +78,7 @@ export class TrackerCronJob {
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
     await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation('AU');
+    await this.automationService.runAutomation();
   }
 
   runCron(): boolean {

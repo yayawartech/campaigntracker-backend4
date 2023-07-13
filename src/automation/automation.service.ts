@@ -271,7 +271,7 @@ export class AutomationService {
   }
 
   //Run Automation
-  async runAutomation(country: string): Promise<boolean> {
+  async runAutomation(): Promise<boolean> {
     this.logger.log('Started Cron Job for RunAutomation');
     try {
       const automations = await this.prisma.automation.findMany({
@@ -292,12 +292,8 @@ export class AutomationService {
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         // For each row, generateQuery.
-        const query = await this.generateQuery(
-          rules,
-          adsetTable,
-          reportView,
-          country,
-        );
+        const query = await this.generateQuery(rules, adsetTable, reportView);
+        this.logger.log('Query', query);
         if (query) {
           let res: QueryResponse[] = [];
           try {
@@ -394,12 +390,10 @@ export class AutomationService {
     rules: Rule[],
     adsetTable: string,
     reportView: string,
-    country: string,
   ): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
       reportView,
-      country,
     );
 
     let query = 'WITH\n';
@@ -437,7 +431,6 @@ export class AutomationService {
   buildQueryPartials(
     rules: Rule[],
     reportView: string,
-    country: string,
   ): [string[], JoinList, WithList] {
     const whereList: string[] = [];
     const joinList: JoinList = {};
@@ -604,9 +597,6 @@ export class AutomationService {
       }
     }
 
-    // TODO: create wherelist and append
-    //t1.country = [param ma aako country]
-    whereList.push(this.generateWhere('t1.country', '=', `'${country}'`));
     //t1.status = 'ACTIVE'
     whereList.push(this.generateWhere('t1.status', '=', `'active'`));
     return [whereList, joinList, withList];

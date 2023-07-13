@@ -48,7 +48,7 @@ export class AutomationController {
 
   @Get('/test')
   async runAutomation() {
-    return this.automationService.runAutomation('USA');
+    return this.automationService.runAutomation();
   }
 
   @Get(':id')
