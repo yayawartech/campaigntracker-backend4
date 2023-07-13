@@ -311,9 +311,30 @@ export class AutomationService {
               const res: any = await this.prisma.$queryRaw(
                 Prisma.sql`SELECT daily_budget FROM ${reportView} WHERE adset_id = ${row.adset_id} LIMIT 1`,
               );
-              const viewData = res.forEach((data: any) => {
-                console.log(data);
-              });
+              let newBudget: number = null;
+              const dailyBudget = res.daily_budget;
+
+              if (automation.options == 'Budget Increase') {
+                if (automation.budgetType == 'percentage') {
+                  //newBudget = current + current*budgetPercent
+                  newBudget =
+                    dailyBudget +
+                    dailyBudget * (+automation.budgetPercent / 100);
+                } else {
+                  // newBudget = current + budgetAmount
+                  newBudget = +(dailyBudget + automation.budgetAmount);
+                }
+              } else {
+                if (automation.budgetType == 'percentage') {
+                  //newBudget = current - current*budgetPercent
+                  newBudget =
+                    dailyBudget -
+                    dailyBudget * (+automation.budgetPercent / 100);
+                } else {
+                  // newBudget = current - budgetAmount
+                  newBudget = dailyBudget - +automation.budgetAmount;
+                }
+              }
               if (automation.postToDatabase) {
                 this.logger.log('Execute API CAll, Postint to database..');
                 let actionDisplayText = '';
@@ -326,13 +347,17 @@ export class AutomationService {
                     automation.options +
                     ' =>  ' +
                     automation.budgetPercent +
-                    ' %';
+                    ' %' +
+                    ' New Budget => ' +
+                    newBudget;
                 } else if (automation.budgetType === 'amount') {
                   actionDisplayText =
                     automation.options +
                     ' =>  ' +
                     automation.budgetAmount +
-                    ' %';
+                    ' %' +
+                    'New Budget =>' +
+                    newBudget;
                 }
 
                 if (automation.options === 'Status') {
@@ -474,7 +499,7 @@ export class AutomationService {
         // generateWhere
         const operand = rule.operand;
         const condition = `${alias}.average_rpc`;
-        const value = rule.parameters;
+        const value = `${alias}.${rule.parameters}`;
         whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'category_rpc') {
         // generateWith
@@ -487,7 +512,7 @@ export class AutomationService {
         // generateWhere
         const operand = rule.operand;
         const condition = `${alias}.average_rpc`;
-        const value = rule.parameters;
+        const value = `${alias}.${rule.parameters}`;
         whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'margin' || param === 'profit') {
         const operand = rule.operand;
@@ -563,15 +588,15 @@ export class AutomationService {
         const operand = rule.operand;
         const parameters = rule.parameters;
         const daysAgo = rule.daysAgo;
+        const daysCompareTo = rule.daysCompareTo;
         const types = rule.type;
 
         const days: string[] = [];
-        if (types === 'parameter') {
-          if (daysAgo) {
-            days.push(daysAgo);
-          } else {
-            days.push(daysAgo);
-          }
+        if (types === 'timeframe') {
+          if (daysAgo) days.push(daysAgo);
+          if (daysCompareTo) days.push(daysCompareTo);
+        } else {
+          if (daysAgo) days.push(daysAgo);
         }
 
         const conditions: string[] = [];
@@ -582,11 +607,11 @@ export class AutomationService {
           joinList[alias] = this.generateJoin(alias);
 
           if (types === 'parameter') {
-            const conditions = `${alias}.${param}`;
+            const conditions = `${alias}.average_rpc`;
             let value = '';
 
             if (param === 'rpc') {
-              value = parameters;
+              value = `${alias}.${parameters}`;
             }
             whereList.push(this.generateWhere(conditions, operand, value));
           } else {
@@ -598,7 +623,7 @@ export class AutomationService {
     }
 
     //t1.status = 'ACTIVE'
-    whereList.push(this.generateWhere('t1.status', '=', `'active'`));
+    whereList.push(this.generateWhere('t1.status', '=', `'ACTIVE'`));
     return [whereList, joinList, withList];
   }
 
@@ -618,7 +643,11 @@ export class AutomationService {
       alias = param;
       withQuery = `\t${alias} AS (SELECT adset_id,sum(clicks) as total_clicks FROM ${reportView} GROUP BY adset_id`;
       withQuery += ')';
-    } else if (param === 'average_rpc' || param === 'category_rpc') {
+    } else if (
+      param === 'average_rpc' ||
+      param === 'category_rpc' ||
+      param === 'rpc'
+    ) {
       alias = 'vSpend';
       withQuery = `\t${alias} AS (SELECT adset_id, categoryRPC as category_rpc, averageRPC as average_rpc FROM ${reportView}`;
       withQuery += ')';
