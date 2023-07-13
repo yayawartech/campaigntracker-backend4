@@ -25,7 +25,7 @@ export class TrackerCronJob {
     if (!this.runCron()) {
       return;
     }
-    const dateTime = dayjs().tz('America/New_York');
+    const dateTime = dayjs();
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(previousDate, previousDate);
   }
@@ -36,36 +36,10 @@ export class TrackerCronJob {
       return;
     }
 
-    const dateTime = dayjs().tz('America/New_York');
+    const dateTime = dayjs();
     const currentDate = dateTime.format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, currentDate);
     await this.adSetsService.fetchAdSetsDataFromApi();
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_3AM) // 11PM EST
-  async runAutomation(): Promise<void> {
-    if (!this.runCron()) {
-      return;
-    }
-    const dateTime = dayjs().tz('America/New_York');
-    const currentDate = dateTime.format('YYYY-MM-DD');
-    const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
-    await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
-    await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation('USA');
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_10PM) // 6PM EST
-  async runAutomationSecond(): Promise<void> {
-    if (!this.runCron()) {
-      return;
-    }
-    const dateTime = dayjs().tz('America/New_York');
-    const currentDate = dateTime.format('YYYY-MM-DD');
-    const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
-    await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
-    await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation('UK');
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_1PM) // 1AM EST
@@ -73,7 +47,7 @@ export class TrackerCronJob {
     if (!this.runCron()) {
       return;
     }
-    const dateTime = dayjs().tz('America/New_York');
+    const dateTime = dayjs();
     const currentDate = dateTime.format('YYYY-MM-DD');
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
