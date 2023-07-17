@@ -42,32 +42,6 @@ export class TrackerCronJob {
     await this.adSetsService.fetchAdSetsDataFromApi();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_3AM) // 11PM EST
-  async runAutomation(): Promise<void> {
-    if (!this.runCron()) {
-      return;
-    }
-    const dateTime = dayjs().tz('America/New_York');
-    const currentDate = dateTime.format('YYYY-MM-DD');
-    const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
-    await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
-    await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation();
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_10PM) // 6PM EST
-  async runAutomationSecond(): Promise<void> {
-    if (!this.runCron()) {
-      return;
-    }
-    const dateTime = dayjs().tz('America/New_York');
-    const currentDate = dateTime.format('YYYY-MM-DD');
-    const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
-    await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
-    await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation();
-  }
-
   @Cron(CronExpression.EVERY_DAY_AT_1PM) // 1AM EST
   async runAutomationThird(): Promise<void> {
     if (!this.runCron()) {
