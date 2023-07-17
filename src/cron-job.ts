@@ -25,7 +25,7 @@ export class TrackerCronJob {
     if (!this.runCron()) {
       return;
     }
-    const dateTime = dayjs().tz('America/New_York');
+    const dateTime = dayjs();
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(previousDate, previousDate);
   }
@@ -36,7 +36,7 @@ export class TrackerCronJob {
       return;
     }
 
-    const dateTime = dayjs().tz('America/New_York');
+    const dateTime = dayjs();
     const currentDate = dateTime.format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, currentDate);
     await this.adSetsService.fetchAdSetsDataFromApi();
@@ -73,7 +73,7 @@ export class TrackerCronJob {
     if (!this.runCron()) {
       return;
     }
-    const dateTime = dayjs().tz('America/New_York');
+    const dateTime = dayjs();
     const currentDate = dateTime.format('YYYY-MM-DD');
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, previousDate);

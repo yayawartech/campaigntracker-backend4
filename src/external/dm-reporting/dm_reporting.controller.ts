@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 
 import { DMReportingService } from './dm_reporting.service';
 import { DmReporting, v_spendreport } from '@prisma/client';
@@ -8,7 +8,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(timezone);
 dayjs.extend(utc);
-//@UseGuards(CustomCookieGuard)
 @Controller('campaigns')
 @UseGuards(AuthGuard('jwt'))
 export class DMReportingController {
@@ -60,9 +59,8 @@ export class DMReportingController {
 
   @Get('/test')
   async test() {
-    // await this.dmReportingService.fetchExternalApiData(dateTime, dateTime);
+    const dateTime = dayjs();
     for (let i = 0; i < 10; i++) {
-      const dateTime = dayjs().tz('America/New_York');
       const startDate = dateTime.subtract(i, 'day').format('YYYY-MM-DD');
       await this.dmReportingService.fetchExternalApiData(startDate, startDate);
     }

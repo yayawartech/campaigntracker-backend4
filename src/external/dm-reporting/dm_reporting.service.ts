@@ -46,11 +46,11 @@ export class DMReportingService {
       const response: AxiosResponse = await axios.get(url);
       if (response) {
         const dataToInsert: DmReportingHistory[] = response.data.map(
-          (record) => {
+          async (record) => {
             const manager = record.Manager || null;
             const recordDate =
               record.Date.substring(0, 10) + ' ' + record.Hour + ':00:00';
-            const formattedDate = dayjs.tz(recordDate, 'America/New_York');
+            const formattedDate = dayjs.tz(recordDate, 'UTC');
             const createdRecords = this.prismaService.dmReportingHistory.create(
               {
                 data: {
