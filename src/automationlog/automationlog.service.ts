@@ -34,12 +34,40 @@ export class AutomationlogService {
   async findAllAutomationLog(
     page: number = 1,
     pageSize: number = 10,
+    fromDate: string = null,
+    toDate: string = null,
+    sort?: any,
   ): Promise<PaginationResponse<AutomationLog>> {
     const skip = (page - 1) * pageSize;
     const take = Number(pageSize);
+    let where: any = {};
+
+    if (fromDate !== null && toDate !== null) {
+      const fromQueryDate = new Date(fromDate)
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      const toQueryDate = new Date(toDate);
+      toQueryDate.setUTCHours(23, 59, 59);
+
+      const formattedToDate = toQueryDate
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      where = {
+        ...where,
+        start_time: {
+          gte: new Date(fromQueryDate),
+          lte: new Date(formattedToDate),
+        },
+      };
+    }
     const automationlogs = await this.prisma.automationLog.findMany({
       skip,
       take,
+      orderBy: sort ? { [sort.id]: sort.desc === 'true' ? 'desc' : 'asc' } : {},
     });
     const totalItems = await this.prisma.automationLog.count(); // Count total number of items
 

@@ -14,12 +14,14 @@ export class AdSetsController {
     @Query('pageSize') pageSize: number,
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
+    @Query('sort') sort: any,
   ): Promise<PaginationResponse<AdSets>> {
     const resp = await this.adSetsService.getAdSetsData(
       page,
       pageSize,
       fromDate,
       toDate,
+      sort,
     );
     return resp;
   }
