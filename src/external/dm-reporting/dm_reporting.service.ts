@@ -98,6 +98,7 @@ export class DMReportingService {
     pageSize = 10,
     fromDate: string = null,
     toDate: string = null,
+    sort?: any,
   ): Promise<PaginationResponse<DmReporting>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
@@ -130,9 +131,7 @@ export class DMReportingService {
       skip,
       take,
       where,
-      orderBy: {
-        start_time: 'desc',
-      },
+      orderBy: sort ? { [sort.id]: sort.desc === 'true' ? 'desc' : 'asc' } : {},
     });
     const totalItems = await this.prismaService.dmReporting.count();
 

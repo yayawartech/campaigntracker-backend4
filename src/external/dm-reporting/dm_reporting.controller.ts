@@ -19,12 +19,14 @@ export class DMReportingController {
     @Query('pageSize') pageSize: number,
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
+    @Query('sort') sort: any,
   ): Promise<PaginationResponse<DmReporting>> {
     const resp = await this.dmReportingService.findAll(
       page,
       pageSize,
       fromDate,
       toDate,
+      sort,
     );
     return resp;
   }
@@ -59,7 +61,7 @@ export class DMReportingController {
   async test() {
     const dateTime = dayjs();
     for (let i = 0; i < 10; i++) {
-      const startDate = dateTime.subtract(0, 'day').format('YYYY-MM-DD');
+      const startDate = dateTime.subtract(i, 'day').format('YYYY-MM-DD');
       await this.dmReportingService.fetchExternalApiData(startDate, startDate);
     }
     // const startDate = '2023-06-14';
