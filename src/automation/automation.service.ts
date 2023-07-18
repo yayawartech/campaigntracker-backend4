@@ -466,7 +466,7 @@ export class AutomationService {
 
       if (param === 'current_budget') {
         const operand = rule.operand;
-        const value = rule.dollarValue;
+        const value = Number(rule.dollarValue) * 100;
         const condition = `t1.daily_budget`;
         whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'adset_age') {
@@ -627,7 +627,11 @@ export class AutomationService {
     return [whereList, joinList, withList];
   }
 
-  generateWhere(condition: string, operand: string, value: string): string {
+  generateWhere(
+    condition: string,
+    operand: string,
+    value: string | number,
+  ): string {
     const query = `${condition} ${operand} ${value}`;
     return query;
   }
