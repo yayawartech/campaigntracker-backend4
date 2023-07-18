@@ -19,12 +19,14 @@ export class DMReportingController {
     @Query('pageSize') pageSize: number,
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
+    @Query('sort') sort: any,
   ): Promise<PaginationResponse<DmReporting>> {
     const resp = await this.dmReportingService.findAll(
       page,
       pageSize,
       fromDate,
       toDate,
+      sort,
     );
     return resp;
   }

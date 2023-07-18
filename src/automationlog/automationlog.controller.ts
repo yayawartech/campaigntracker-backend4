@@ -1,5 +1,6 @@
 import { Get, Controller, Query } from '@nestjs/common';
 import { AutomationlogService } from './automationlog.service';
+import { AutomationLog } from '@prisma/client';
 
 @Controller('automationlog')
 export class AutomationlogController {
@@ -8,7 +9,17 @@ export class AutomationlogController {
   async getAutomationLog(
     @Query('page') page: number,
     @Query('pageSize') pageSize: number,
-  ) {
-    return await this.automationlog.findAllAutomationLog(page, pageSize);
+    @Query('fromDate') fromDate: string,
+    @Query('toDate') toDate: string,
+    @Query('sort') sort: any,
+  ): Promise<PaginationResponse<AutomationLog>> {
+    const res = await this.automationlog.findAllAutomationLog(
+      page,
+      pageSize,
+      fromDate,
+      toDate,
+      sort,
+    );
+    return res;
   }
 }

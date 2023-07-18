@@ -52,7 +52,7 @@ export class TrackerCronJob {
     const previousDate = dateTime.subtract(1, 'day').format('YYYY-MM-DD');
     await this.extAPIService.fetchExternalApiData(currentDate, previousDate);
     await this.adSetsService.fetchAdSetsDataFromApi();
-    await this.automationService.runAutomation('AU');
+    await this.automationService.runAutomation();
   }
 
   runCron(): boolean {
