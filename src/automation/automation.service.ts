@@ -300,7 +300,6 @@ export class AutomationService {
             // Execute the Query.
             res = await this.prisma.$queryRaw(Prisma.sql([query]));
           } catch (e) {
-            // this.logger.log('Query', query);
             this.logger.error(e.toString());
             continue;
           }
@@ -308,11 +307,12 @@ export class AutomationService {
           if (Array.isArray(res) && res.length > 0) {
             res.map(async (row) => {
               // Execute API Call
-              const res: any = await this.prisma.$queryRaw(
-                Prisma.sql`SELECT daily_budget FROM ${reportView} WHERE adset_id = ${row.adset_id} LIMIT 1`,
-              );
+              let res: any;
+              const query = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
+              res = await this.prisma.$queryRaw(Prisma.sql([query]));
+
               let newBudget: number = null;
-              const dailyBudget = res.daily_budget;
+              const dailyBudget: number = res.daily_budget;
 
               if (automation.options == 'Budget Increase') {
                 if (automation.budgetType == 'percentage') {
