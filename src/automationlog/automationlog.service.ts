@@ -58,7 +58,7 @@ export class AutomationlogService {
 
       where = {
         ...where,
-        start_time: {
+        createdAt: {
           gte: new Date(fromQueryDate),
           lte: new Date(formattedToDate),
         },
@@ -68,6 +68,7 @@ export class AutomationlogService {
       skip,
       take,
       orderBy: sort ? { [sort.id]: sort.desc === 'true' ? 'desc' : 'asc' } : {},
+      where,
     });
     const totalItems = await this.prisma.automationLog.count(); // Count total number of items
 
