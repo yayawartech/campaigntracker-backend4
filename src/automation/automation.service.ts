@@ -11,6 +11,7 @@ import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
+import { error } from 'console';
 
 interface Rule {
   id: number;
@@ -312,14 +313,19 @@ export class AutomationService {
               res = await this.prisma.$queryRaw(Prisma.sql([query]));
 
               let newBudget: number = null;
-              const dailyBudget: number = res.daily_budget;
+              const dailyBudget: number = res[0].daily_budget;
 
               if (automation.options == 'Budget Increase') {
                 if (automation.budgetType == 'percentage') {
+                  const budgetPercent = Number(automation.budgetPercent);
                   //newBudget = current + current*budgetPercent
-                  newBudget =
-                    dailyBudget +
-                    dailyBudget * (+automation.budgetPercent / 100);
+                  if (!Number.isNaN(budgetPercent)) {
+                    newBudget =
+                      dailyBudget +
+                      dailyBudget * (Number(automation.budgetPercent) / 100);
+                  } else {
+                    this.logger.error(error);
+                  }
                 } else {
                   // newBudget = current + budgetAmount
                   newBudget = +(dailyBudget + automation.budgetAmount);
@@ -327,9 +333,14 @@ export class AutomationService {
               } else {
                 if (automation.budgetType == 'percentage') {
                   //newBudget = current - current*budgetPercent
-                  newBudget =
-                    dailyBudget -
-                    dailyBudget * (+automation.budgetPercent / 100);
+                  const budgetPercent = Number(automation.budgetPercent);
+                  if (!Number.isNaN(budgetPercent)) {
+                    newBudget =
+                      dailyBudget -
+                      dailyBudget * (Number(automation.budgetPercent) / 100);
+                  } else {
+                    this.logger.error(error);
+                  }
                 } else {
                   // newBudget = current - budgetAmount
                   newBudget = dailyBudget - +automation.budgetAmount;
@@ -376,6 +387,7 @@ export class AutomationService {
                   rulesDisplay: automation.displayText,
                   adSetId: row.adset_id,
                   action: action,
+                  query: query,
                 };
                 await this.automationLogService.createAutomationLog(data);
               } else {

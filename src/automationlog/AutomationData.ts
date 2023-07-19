@@ -7,4 +7,5 @@ export interface AutomationData {
   rulesDisplay: string;
   adSetId: string;
   action: string;
+  query: string;
 }

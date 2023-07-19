@@ -23,6 +23,7 @@ export class AutomationlogService {
           rules: log_data.rulesDisplay,
           adset_id: log_data.adSetId,
           action: log_data.action,
+          query: log_data.query,
         },
       });
     } catch (error) {
