@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Query,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { Automation, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
@@ -12,6 +6,8 @@ import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
 import { error } from 'console';
+import axios, { AxiosResponse } from 'axios';
+import { FACEBOOK_ACCESS_TOKEN, FACEBOOK_API_URL } from 'src/config';
 
 interface Rule {
   id: number;
@@ -292,6 +288,7 @@ export class AutomationService {
         const rules = JSON.parse(JSON.stringify(automation.rules));
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
+
         // For each row, generateQuery.
         const query = await this.generateQuery(rules, adsetTable, reportView);
         this.logger.log('Query', query);
@@ -346,8 +343,9 @@ export class AutomationService {
                   newBudget = dailyBudget - +automation.budgetAmount;
                 }
               }
+              let data;
               if (automation.postToDatabase) {
-                this.logger.log('Execute API CAll, Postint to database..');
+                this.logger.log('Execute API CAll, Post into database..');
                 let actionDisplayText = '';
                 let action = '';
                 if (automation.options === 'Status') {
@@ -381,7 +379,7 @@ export class AutomationService {
                   action = 'Budget Adjusted';
                 }
 
-                const data = {
+                data = {
                   automationId: automation.id,
                   actionDisplayText: actionDisplayText,
                   rulesDisplay: automation.displayText,
@@ -389,10 +387,21 @@ export class AutomationService {
                   action: action,
                   query: query,
                 };
+
                 await this.automationLogService.createAutomationLog(data);
               } else {
                 // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
+                await Promise.all(
+                  res.map(async (data) => {
+                    const adsetId = data.adset_id;
+                    try {
+                      const apiResponse = await this.updateAdsetStatus(adsetId);
+                    } catch (error) {
+                      this.logger.error('Error in API Call');
+                    }
+                  }),
+                );
               }
             });
           }
@@ -419,6 +428,18 @@ export class AutomationService {
       return results.includes(false) ? false : true;
     } catch (error) {
       this.logger.error(error);
+    }
+  }
+  async updateAdsetStatus(adsetId: any): Promise<void> {
+    // const adsetId = '23856351581290633';
+    const body = { status: 'PAUSED' };
+    const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status`;
+    console.log(url);
+    try {
+      const response: AxiosResponse = await axios.post(url, body);
+      this.logger.log(`Adset ${adsetId} status updated to ${body.status}`);
+    } catch (error) {
+      this.logger.error('Error');
     }
   }
 
