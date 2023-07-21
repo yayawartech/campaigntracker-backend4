@@ -387,8 +387,8 @@ export class AutomationService {
                 query: query,
               };
 
+              await this.automationLogService.createAutomationLog(data);
               if (!automation.postToDatabase) {
-                await this.automationLogService.createAutomationLog(data);
                 // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
                 await Promise.all(
