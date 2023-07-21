@@ -434,10 +434,10 @@ export class AutomationService {
     // const adsetId = '23856351581290633';
     const body = { status: 'PAUSED' };
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status`;
-    console.log(url);
+    // console.log(url);
     try {
-      const response: AxiosResponse = await axios.post(url, body);
-      this.logger.log(`Adset ${adsetId} status updated to ${body.status}`);
+      const response: AxiosResponse = await axios.get(url);
+      this.logger.log(`Adset ${adsetId} status updated to ${body}`);
     } catch (error) {
       this.logger.error('Error');
     }
