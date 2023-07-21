@@ -344,52 +344,51 @@ export class AutomationService {
                 }
               }
               let data;
-              if (automation.postToDatabase) {
-                this.logger.log('Execute API CAll, Post into database..');
-                let actionDisplayText = '';
-                let action = '';
-                if (automation.options === 'Status') {
-                  actionDisplayText =
-                    automation.options + ' =>  ' + automation.actionStatus;
-                } else if (automation.budgetType === 'percentage') {
-                  actionDisplayText =
-                    automation.options +
-                    ' =>  ' +
-                    automation.budgetPercent +
-                    ' %' +
-                    ' New Budget => ' +
-                    newBudget;
-                } else if (automation.budgetType === 'amount') {
-                  actionDisplayText =
-                    automation.options +
-                    ' =>  ' +
-                    automation.budgetAmount +
-                    ' %' +
-                    'New Budget =>' +
-                    newBudget;
-                }
+              this.logger.log('Execute API CAll, Post into database..');
+              let actionDisplayText = '';
+              let action = '';
+              if (automation.options === 'Status') {
+                actionDisplayText =
+                  automation.options + ' =>  ' + automation.actionStatus;
+              } else if (automation.budgetType === 'percentage') {
+                actionDisplayText =
+                  automation.options +
+                  ' =>  ' +
+                  automation.budgetPercent +
+                  ' %' +
+                  ' New Budget => ' +
+                  newBudget;
+              } else if (automation.budgetType === 'amount') {
+                actionDisplayText =
+                  automation.options +
+                  ' =>  ' +
+                  automation.budgetAmount +
+                  ' %' +
+                  'New Budget =>' +
+                  newBudget;
+              }
 
-                if (automation.options === 'Status') {
-                  action = 'Status Adjusted';
-                }
-                if (
-                  automation.options === 'Budget Increase' ||
-                  automation.options === 'Budget Decrease'
-                ) {
-                  action = 'Budget Adjusted';
-                }
+              if (automation.options === 'Status') {
+                action = 'Status Adjusted';
+              }
+              if (
+                automation.options === 'Budget Increase' ||
+                automation.options === 'Budget Decrease'
+              ) {
+                action = 'Budget Adjusted';
+              }
 
-                data = {
-                  automationId: automation.id,
-                  actionDisplayText: actionDisplayText,
-                  rulesDisplay: automation.displayText,
-                  adSetId: row.adset_id,
-                  action: action,
-                  query: query,
-                };
+              data = {
+                automationId: automation.id,
+                actionDisplayText: actionDisplayText,
+                rulesDisplay: automation.displayText,
+                adSetId: row.adset_id,
+                action: action,
+                query: query,
+              };
 
+              if (!automation.postToDatabase) {
                 await this.automationLogService.createAutomationLog(data);
-              } else {
                 // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
                 await Promise.all(
