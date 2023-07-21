@@ -306,8 +306,8 @@ export class AutomationService {
             res.map(async (row) => {
               // Execute API Call
               let res: any;
-              const query = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
-              res = await this.prisma.$queryRaw(Prisma.sql([query]));
+              const resquery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
+              res = await this.prisma.$queryRaw(Prisma.sql([resquery]));
 
               let newBudget: number = null;
               const dailyBudget: number = res[0].daily_budget;
