@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Query,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { Automation, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
@@ -12,6 +6,8 @@ import { PaginationService } from 'src/pagination/pagination.service';
 import { Logger } from '@nestjs/common';
 import { AutomationlogService } from 'src/automationlog/automationlog.service';
 import { error } from 'console';
+import axios, { AxiosResponse } from 'axios';
+import { FACEBOOK_ACCESS_TOKEN, FACEBOOK_API_URL } from 'src/config';
 
 interface Rule {
   id: number;
@@ -292,6 +288,7 @@ export class AutomationService {
         const rules = JSON.parse(JSON.stringify(automation.rules));
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
+
         // For each row, generateQuery.
         const query = await this.generateQuery(rules, adsetTable, reportView);
         this.logger.log('Query', query);
@@ -309,8 +306,8 @@ export class AutomationService {
             res.map(async (row) => {
               // Execute API Call
               let res: any;
-              const query = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
-              res = await this.prisma.$queryRaw(Prisma.sql([query]));
+              const resquery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
+              res = await this.prisma.$queryRaw(Prisma.sql([resquery]));
 
               let newBudget: number = null;
               const dailyBudget: number = res[0].daily_budget;
@@ -346,53 +343,64 @@ export class AutomationService {
                   newBudget = dailyBudget - +automation.budgetAmount;
                 }
               }
-              if (automation.postToDatabase) {
-                this.logger.log('Execute API CAll, Postint to database..');
-                let actionDisplayText = '';
-                let action = '';
-                if (automation.options === 'Status') {
-                  actionDisplayText =
-                    automation.options + ' =>  ' + automation.actionStatus;
-                } else if (automation.budgetType === 'percentage') {
-                  actionDisplayText =
-                    automation.options +
-                    ' =>  ' +
-                    automation.budgetPercent +
-                    ' %' +
-                    ' New Budget => ' +
-                    newBudget;
-                } else if (automation.budgetType === 'amount') {
-                  actionDisplayText =
-                    automation.options +
-                    ' =>  ' +
-                    automation.budgetAmount +
-                    ' %' +
-                    'New Budget =>' +
-                    newBudget;
-                }
+              let data;
+              this.logger.log('Execute API CAll, Post into database..');
+              let actionDisplayText = '';
+              let action = '';
+              if (automation.options === 'Status') {
+                actionDisplayText =
+                  automation.options + ' =>  ' + automation.actionStatus;
+              } else if (automation.budgetType === 'percentage') {
+                actionDisplayText =
+                  automation.options +
+                  ' =>  ' +
+                  automation.budgetPercent +
+                  ' %' +
+                  ' New Budget => ' +
+                  newBudget;
+              } else if (automation.budgetType === 'amount') {
+                actionDisplayText =
+                  automation.options +
+                  ' =>  ' +
+                  automation.budgetAmount +
+                  ' %' +
+                  'New Budget =>' +
+                  newBudget;
+              }
 
-                if (automation.options === 'Status') {
-                  action = 'Status Adjusted';
-                }
-                if (
-                  automation.options === 'Budget Increase' ||
-                  automation.options === 'Budget Decrease'
-                ) {
-                  action = 'Budget Adjusted';
-                }
+              if (automation.options === 'Status') {
+                action = 'Status Adjusted';
+              }
+              if (
+                automation.options === 'Budget Increase' ||
+                automation.options === 'Budget Decrease'
+              ) {
+                action = 'Budget Adjusted';
+              }
 
-                const data = {
-                  automationId: automation.id,
-                  actionDisplayText: actionDisplayText,
-                  rulesDisplay: automation.displayText,
-                  adSetId: row.adset_id,
-                  action: action,
-                  query: query,
-                };
+              data = {
+                automationId: automation.id,
+                actionDisplayText: actionDisplayText,
+                rulesDisplay: automation.displayText,
+                adSetId: row.adset_id,
+                action: action,
+                query: query,
+              };
+
+              if (!automation.postToDatabase) {
                 await this.automationLogService.createAutomationLog(data);
-              } else {
                 // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
+                await Promise.all(
+                  res.map(async (data) => {
+                    const adsetId = data.adset_id;
+                    try {
+                      const apiResponse = await this.updateAdsetStatus(adsetId);
+                    } catch (error) {
+                      this.logger.error('Error in API Call');
+                    }
+                  }),
+                );
               }
             });
           }
@@ -419,6 +427,18 @@ export class AutomationService {
       return results.includes(false) ? false : true;
     } catch (error) {
       this.logger.error(error);
+    }
+  }
+  async updateAdsetStatus(adsetId: any): Promise<void> {
+    // const adsetId = '23856351581290633';
+    const body = { status: 'PAUSED' };
+    const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status`;
+    // console.log(url);
+    try {
+      const response: AxiosResponse = await axios.get(url);
+      this.logger.log(`Adset ${adsetId} status updated to ${body}`);
+    } catch (error) {
+      this.logger.error('Error');
     }
   }
 
