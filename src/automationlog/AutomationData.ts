@@ -8,4 +8,6 @@ export interface AutomationData {
   adSetId: string;
   action: string;
   query: string;
+  old_budget: string;
+  old_status: string;
 }

@@ -24,6 +24,8 @@ export class AutomationlogService {
           adset_id: log_data.adSetId,
           action: log_data.action,
           query: log_data.query,
+          old_budget: log_data.old_budget,
+          old_status: log_data.old_status,
         },
       });
     } catch (error) {

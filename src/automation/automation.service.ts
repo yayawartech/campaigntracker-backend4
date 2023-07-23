@@ -305,12 +305,12 @@ export class AutomationService {
           if (Array.isArray(res) && res.length > 0) {
             res.map(async (row) => {
               // Execute API Call
-              let res: any;
+              let resPonse: any;
               const resquery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
-              res = await this.prisma.$queryRaw(Prisma.sql([resquery]));
+              resPonse = await this.prisma.$queryRaw(Prisma.sql([resquery]));
 
               let newBudget: number = null;
-              const dailyBudget: number = res[0].daily_budget;
+              const dailyBudget: number = resPonse[0].daily_budget;
 
               if (automation.options == 'Budget Increase') {
                 if (automation.budgetType == 'percentage') {
@@ -385,17 +385,19 @@ export class AutomationService {
                 adSetId: row.adset_id,
                 action: action,
                 query: query,
+                old_budget: row.daily_budget.toString(),
+                old_status: row.status,
               };
 
               await this.automationLogService.createAutomationLog(data);
               if (!automation.postToDatabase) {
                 // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
+                const adSetID = row.adset_id.split(',');
                 await Promise.all(
-                  res.map(async (data) => {
-                    const adsetId = data.adset_id;
+                  adSetID.map(async (data) => {
                     try {
-                      const apiResponse = await this.updateAdsetStatus(adsetId);
+                      const apiResponse = await this.updateAdsetStatus(data);
                     } catch (error) {
                       this.logger.error('Error in API Call');
                     }
@@ -430,10 +432,9 @@ export class AutomationService {
     }
   }
   async updateAdsetStatus(adsetId: any): Promise<void> {
-    // const adsetId = '23856351581290633';
     const body = { status: 'PAUSED' };
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status`;
-    // console.log(url);
+    console.log(url);
     try {
       const response: AxiosResponse = await axios.get(url);
       this.logger.log(`Adset ${adsetId} status updated to ${body}`);

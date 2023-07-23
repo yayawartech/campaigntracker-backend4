@@ -141,7 +141,9 @@ model AutomationLog{
   action String? @db.Text
   adset_id String?
   actionDisplayText String?
-  query String?
+  query String? @db.Text
+  old_budget String?
+  old_status String?
   createdAt DateTime @default(now())
 }
 model CategoryRPC{
