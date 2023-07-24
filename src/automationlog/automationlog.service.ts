@@ -24,8 +24,8 @@ export class AutomationlogService {
           adset_id: log_data.adSetId,
           action: log_data.action,
           query: log_data.query,
-          old_budget: log_data.old_budget,
-          old_status: log_data.old_status,
+          previous_value: log_data.previous_value,
+          new_value: log_data.new_value,
         },
       });
     } catch (error) {
@@ -39,7 +39,8 @@ export class AutomationlogService {
     pageSize: number = 10,
     fromDate: string = null,
     toDate: string = null,
-    sort?: any,
+    sort: any,
+    adsetId: string,
   ): Promise<PaginationResponse<AutomationLog>> {
     const skip = (page - 1) * pageSize;
     const take = Number(pageSize);
@@ -64,6 +65,14 @@ export class AutomationlogService {
         createdAt: {
           gte: new Date(fromQueryDate),
           lte: new Date(formattedToDate),
+        },
+      };
+    }
+    if (adsetId !== '') {
+      where = {
+        ...where,
+        adset_id: {
+          equals: adsetId,
         },
       };
     }
