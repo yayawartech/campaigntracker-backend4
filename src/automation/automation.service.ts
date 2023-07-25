@@ -305,12 +305,12 @@ export class AutomationService {
           if (Array.isArray(res) && res.length > 0) {
             res.map(async (row) => {
               // Execute API Call
-              let res: any;
+              let resPonse: any;
               const resquery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
-              res = await this.prisma.$queryRaw(Prisma.sql([resquery]));
+              resPonse = await this.prisma.$queryRaw(Prisma.sql([resquery]));
 
               let newBudget: number = null;
-              const dailyBudget: number = res[0].daily_budget;
+              const dailyBudget: number = resPonse[0].daily_budget;
 
               if (automation.options == 'Budget Increase') {
                 if (automation.budgetType == 'percentage') {
@@ -325,7 +325,7 @@ export class AutomationService {
                   }
                 } else {
                   // newBudget = current + budgetAmount
-                  newBudget = +(dailyBudget + automation.budgetAmount);
+                  newBudget = +(dailyBudget + +automation.budgetAmount);
                 }
               } else {
                 if (automation.budgetType == 'percentage') {
@@ -385,17 +385,43 @@ export class AutomationService {
                 adSetId: row.adset_id,
                 action: action,
                 query: query,
+                previous_value: {
+                  budget: row.daily_budget.toString(),
+                  status: row.status,
+                },
+                new_value: {
+                  budget: newBudget,
+                  status: automation.actionStatus.toUpperCase(),
+                },
               };
 
               await this.automationLogService.createAutomationLog(data);
+
               if (!automation.postToDatabase) {
                 // TODO API Call Implementation
                 this.logger.log('Actual API CALL');
+                const adSetID = row.adset_id.split(',');
                 await Promise.all(
-                  res.map(async (data) => {
-                    const adsetId = data.adset_id;
+                  adSetID.map(async (adSetData) => {
                     try {
-                      const apiResponse = await this.updateAdsetStatus(adsetId);
+                      const apiResponse = await this.getAdsetCurrentData(
+                        adSetData,
+                      );
+                      data.previous_value.budget = apiResponse['daily_budget'];
+                      data.previous_value.status = apiResponse['status'];
+                      await this.automationLogService.createAutomationLog(data);
+                      console.log('ApiResponse', apiResponse);
+                      // API Call here...
+                      const postData = {
+                        new_budget: newBudget,
+                        status: automation.actionStatus.toUpperCase(),
+                      };
+                      await this.postAdsetNewData(
+                        adSetID,
+                        newBudget,
+                        automation.actionStatus.toUpperCase(),
+                        apiResponse['status'],
+                      );
                     } catch (error) {
                       this.logger.error('Error in API Call');
                     }
@@ -429,16 +455,42 @@ export class AutomationService {
       this.logger.error(error);
     }
   }
-  async updateAdsetStatus(adsetId: any): Promise<void> {
-    // const adsetId = '23856351581290633';
-    const body = { status: 'PAUSED' };
-    const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status`;
-    // console.log(url);
+  async getAdsetCurrentData(adsetId: any): Promise<void> {
+    const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
     try {
       const response: AxiosResponse = await axios.get(url);
-      this.logger.log(`Adset ${adsetId} status updated to ${body}`);
+      return response.data;
     } catch (error) {
       this.logger.error('Error');
+    }
+  }
+  async postAdsetNewData(
+    adsetId: any,
+    newBudget: number,
+    status: string,
+    oldStatus: string,
+  ): Promise<void> {
+    var body = {};
+    this.logger.log(status, oldStatus, newBudget);
+    let newStatus = '';
+    if (status === oldStatus) {
+      newStatus = status;
+    } else {
+      newStatus = oldStatus;
+    }
+    body = { daily_budget: newBudget.toString(), status: newStatus };
+    this.logger.log(
+      `Adset ${adsetId} status to be updated to ${JSON.stringify(body)}`,
+    );
+    const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
+    try {
+      const response: AxiosResponse = await axios.post(url, body);
+      this.logger.log(
+        `Adset ${adsetId} status updated to ${JSON.stringify(body)}`,
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(error.stack);
     }
   }
 
@@ -453,15 +505,18 @@ export class AutomationService {
       reportView,
     );
 
-    let query = 'WITH\n';
+    let query = '';
+    if (Object.keys(withList).length > 0) {
+      query = 'WITH\n';
 
-    const withEntries = Object.values(withList);
-    for (let i = 0; i < withEntries.length; i++) {
-      query += withEntries[i];
-      if (i !== withEntries.length - 1) {
-        query += ',';
+      const withEntries = Object.values(withList);
+      for (let i = 0; i < withEntries.length; i++) {
+        query += withEntries[i];
+        if (i !== withEntries.length - 1) {
+          query += ',';
+        }
+        query += '\n';
       }
-      query += '\n';
     }
 
     const select = `SELECT t1.adset_id, t1.daily_budget, t1.status FROM ${adsetTable} t1\n`;

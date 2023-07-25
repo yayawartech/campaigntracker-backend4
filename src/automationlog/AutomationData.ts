@@ -8,4 +8,6 @@ export interface AutomationData {
   adSetId: string;
   action: string;
   query: string;
+  previous_value: string;
+  new_value: string;
 }

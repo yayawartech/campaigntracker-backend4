@@ -12,6 +12,7 @@ export class AutomationlogController {
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
     @Query('sort') sort: any,
+    @Query('adsetId') adsetId: string,
   ): Promise<PaginationResponse<AutomationLog>> {
     const res = await this.automationlog.findAllAutomationLog(
       page,
@@ -19,6 +20,7 @@ export class AutomationlogController {
       fromDate,
       toDate,
       sort,
+      adsetId,
     );
     return res;
   }
