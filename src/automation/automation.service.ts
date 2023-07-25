@@ -304,11 +304,11 @@ export class AutomationService {
 
           if (Array.isArray(res) && res.length > 0) {
             res.map(async (row) => {
-              this.logger.log('Execute API Call');
               // Execute API Call
               let resPonse: any;
               const resquery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
               resPonse = await this.prisma.$queryRaw(Prisma.sql([resquery]));
+
               let newBudget: number = null;
               const dailyBudget: number = resPonse[0].daily_budget;
 
@@ -482,8 +482,7 @@ export class AutomationService {
     this.logger.log(
       `Adset ${adsetId} status to be updated to ${JSON.stringify(body)}`,
     );
-    // const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
-    const url = '';
+    const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
     try {
       const response: AxiosResponse = await axios.post(url, body);
       this.logger.log(
