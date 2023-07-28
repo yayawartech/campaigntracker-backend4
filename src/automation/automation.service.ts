@@ -305,12 +305,13 @@ export class AutomationService {
           if (Array.isArray(res) && res.length > 0) {
             res.map(async (row) => {
               // Execute API Call
-              let resPonse: any;
-              const resquery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
-              resPonse = await this.prisma.$queryRaw(Prisma.sql([resquery]));
+              const resQuery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
+              const response = await this.prisma.$queryRaw(
+                Prisma.sql([resQuery]),
+              );
 
               let newBudget: number = null;
-              const dailyBudget: number = resPonse[0].daily_budget;
+              const dailyBudget: number = response[0].daily_budget;
 
               if (automation.options == 'Budget Increase') {
                 if (automation.budgetType == 'percentage') {
@@ -324,8 +325,7 @@ export class AutomationService {
                     this.logger.error(error);
                   }
                 } else {
-                  // newBudget = current + budgetAmount
-                  newBudget = +(dailyBudget + +automation.budgetAmount);
+                  newBudget = Number(automation.budgetAmount) * 100;
                 }
               } else {
                 if (automation.budgetType == 'percentage') {
@@ -339,8 +339,7 @@ export class AutomationService {
                     this.logger.error(error);
                   }
                 } else {
-                  // newBudget = current - budgetAmount
-                  newBudget = dailyBudget - +automation.budgetAmount;
+                  newBudget = Number(automation.budgetAmount) * 100;
                 }
               }
               let data;
@@ -395,11 +394,7 @@ export class AutomationService {
                 },
               };
 
-              await this.automationLogService.createAutomationLog(data);
-
               if (!automation.postToDatabase) {
-                // TODO API Call Implementation
-                this.logger.log('Actual API CALL');
                 const adSetID = row.adset_id.split(',');
                 await Promise.all(
                   adSetID.map(async (adSetData) => {
@@ -427,6 +422,8 @@ export class AutomationService {
                     }
                   }),
                 );
+              } else {
+                await this.automationLogService.createAutomationLog(data);
               }
             });
           }
