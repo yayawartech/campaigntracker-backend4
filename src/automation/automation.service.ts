@@ -362,7 +362,7 @@ export class AutomationService {
                   automation.options +
                   ' =>  ' +
                   automation.budgetAmount +
-                  ' %' +
+                  ' $' +
                   'New Budget =>' +
                   newBudget;
               }
@@ -393,37 +393,40 @@ export class AutomationService {
                   status: automation.actionStatus.toUpperCase(),
                 },
               };
-
-              if (!automation.postToDatabase) {
-                const adSetID = row.adset_id.split(',');
-                await Promise.all(
-                  adSetID.map(async (adSetData) => {
-                    try {
-                      const apiResponse = await this.getAdsetCurrentData(
-                        adSetData,
-                      );
-                      data.previous_value.budget = apiResponse['daily_budget'];
-                      data.previous_value.status = apiResponse['status'];
-                      await this.automationLogService.createAutomationLog(data);
-                      console.log('ApiResponse', apiResponse);
-                      // API Call here...
-                      const postData = {
-                        new_budget: newBudget,
-                        status: automation.actionStatus.toUpperCase(),
-                      };
-                      await this.postAdsetNewData(
-                        adSetID,
-                        newBudget,
-                        automation.actionStatus.toUpperCase(),
-                        apiResponse['status'],
-                      );
-                    } catch (error) {
-                      this.logger.error('Error in API Call');
-                    }
-                  }),
-                );
-              } else {
-                await this.automationLogService.createAutomationLog(data);
+              if (dailyBudget != newBudget) {
+                if (!automation.postToDatabase) {
+                  const adSetID = row.adset_id.split(',');
+                  if (automation.budgetType !== 'amount') {
+                    await Promise.all(
+                      adSetID.map(async (adSetData) => {
+                        try {
+                          const apiResponse = await this.getAdsetCurrentData(
+                            adSetData,
+                          );
+                          data.previous_value.budget =
+                            apiResponse['daily_budget'];
+                          data.previous_value.status = apiResponse['status'];
+                          console.log('ApiResponse', apiResponse);
+                          // API Call here...
+                          const postData = {
+                            new_budget: newBudget,
+                            status: automation.actionStatus.toUpperCase(),
+                          };
+                          await this.postAdsetNewData(
+                            adSetID,
+                            newBudget,
+                            automation.actionStatus.toUpperCase(),
+                            apiResponse['status'],
+                          );
+                        } catch (error) {
+                          this.logger.error('Error in API Call', error);
+                        }
+                      }),
+                    );
+                  }
+                } else {
+                  await this.automationLogService.createAutomationLog(data);
+                }
               }
             });
           }
