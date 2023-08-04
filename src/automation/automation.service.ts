@@ -408,7 +408,6 @@ export class AutomationService {
                           data.previous_value.budget =
                             apiResponse['daily_budget'];
                           data.previous_value.status = apiResponse['status'];
-                          data.response = JSON.stringify(apiResponse);
                           // API Call here...
                           const postData = {
                             new_budget: newBudget,
