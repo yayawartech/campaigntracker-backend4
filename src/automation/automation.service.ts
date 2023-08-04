@@ -366,6 +366,7 @@ export class AutomationService {
                   'New Budget =>' +
                   newBudget;
               }
+              newBudget = Math.ceil(newBudget);
 
               if (automation.options === 'Status') {
                 action = 'Status Adjusted';
@@ -475,7 +476,7 @@ export class AutomationService {
     status: string,
     oldStatus: string,
   ): Promise<void> {
-    var body = {};
+    let body = {};
     this.logger.log(status, oldStatus, newBudget);
     let newStatus = '';
     if (status === oldStatus) {
