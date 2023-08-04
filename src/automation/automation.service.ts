@@ -366,6 +366,7 @@ export class AutomationService {
                   'New Budget =>' +
                   newBudget;
               }
+              newBudget = Math.ceil(newBudget);
 
               if (automation.options === 'Status') {
                 action = 'Status Adjusted';
@@ -395,33 +396,23 @@ export class AutomationService {
               };
 
               if (!automation.postToDatabase) {
-                const adSetID = row.adset_id.split(',');
-                await Promise.all(
-                  adSetID.map(async (adSetData) => {
-                    try {
-                      const apiResponse = await this.getAdsetCurrentData(
-                        adSetData,
-                      );
-                      data.previous_value.budget = apiResponse['daily_budget'];
-                      data.previous_value.status = apiResponse['status'];
-                      await this.automationLogService.createAutomationLog(data);
-                      console.log('ApiResponse', apiResponse);
-                      // API Call here...
-                      const postData = {
-                        new_budget: newBudget,
-                        status: automation.actionStatus.toUpperCase(),
-                      };
-                      await this.postAdsetNewData(
-                        adSetID,
-                        newBudget,
-                        automation.actionStatus.toUpperCase(),
-                        apiResponse['status'],
-                      );
-                    } catch (error) {
-                      this.logger.error('Error in API Call');
-                    }
-                  }),
-                );
+                const adSetData = row.adset_id;
+                const adSetID = row.adset_id;
+                try {
+                  const apiResponse = await this.getAdsetCurrentData(adSetData);
+                  data.previous_value.budget = apiResponse['daily_budget'];
+                  data.previous_value.status = apiResponse['status'];
+                  await this.automationLogService.createAutomationLog(data);
+
+                  await this.postAdsetNewData(
+                    adSetID,
+                    newBudget,
+                    automation.actionStatus.toUpperCase(),
+                    apiResponse['status'],
+                  );
+                } catch (error) {
+                  this.logger.error('Error in API Call');
+                }
               } else {
                 await this.automationLogService.createAutomationLog(data);
               }
@@ -467,7 +458,7 @@ export class AutomationService {
     status: string,
     oldStatus: string,
   ): Promise<void> {
-    var body = {};
+    let body = {};
     this.logger.log(status, oldStatus, newBudget);
     let newStatus = '';
     if (status === oldStatus) {
