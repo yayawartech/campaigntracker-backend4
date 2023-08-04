@@ -392,6 +392,7 @@ export class AutomationService {
                   budget: newBudget,
                   status: automation.actionStatus.toUpperCase(),
                 },
+                response: {},
               };
               if (dailyBudget != newBudget) {
                 if (!automation.postToDatabase) {
@@ -403,20 +404,25 @@ export class AutomationService {
                           const apiResponse = await this.getAdsetCurrentData(
                             adSetData,
                           );
+
                           data.previous_value.budget =
                             apiResponse['daily_budget'];
                           data.previous_value.status = apiResponse['status'];
-                          console.log('ApiResponse', apiResponse);
+                          data.response = JSON.stringify(apiResponse);
                           // API Call here...
                           const postData = {
                             new_budget: newBudget,
                             status: automation.actionStatus.toUpperCase(),
                           };
-                          await this.postAdsetNewData(
+                          const postToDatabase = await this.postAdsetNewData(
                             adSetID,
                             newBudget,
                             automation.actionStatus.toUpperCase(),
                             apiResponse['status'],
+                          );
+                          data.response = postToDatabase;
+                          await this.automationLogService.createAutomationLog(
+                            data,
                           );
                         } catch (error) {
                           this.logger.error('Error in API Call', error);

@@ -144,6 +144,7 @@ model AutomationLog{
   query String? @db.Text
   previous_value Json?
   new_value Json?
+  response Json?
   createdAt DateTime @default(now())
 }
 model CategoryRPC{

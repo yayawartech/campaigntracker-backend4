@@ -26,6 +26,7 @@ export class AutomationlogService {
           query: log_data.query,
           previous_value: log_data.previous_value,
           new_value: log_data.new_value,
+          response: log_data.response,
         },
       });
     } catch (error) {

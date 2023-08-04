@@ -10,4 +10,5 @@ export interface AutomationData {
   query: string;
   previous_value: string;
   new_value: string;
+  response: string;
 }
