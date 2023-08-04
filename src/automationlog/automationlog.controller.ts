@@ -1,8 +1,10 @@
-import { Get, Controller, Query } from '@nestjs/common';
+import { Get, Controller, Query, UseGuards } from '@nestjs/common';
 import { AutomationlogService } from './automationlog.service';
 import { AutomationLog } from '@prisma/client';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('automationlog')
+@UseGuards(AuthGuard('jwt'))
 export class AutomationlogController {
   constructor(private readonly automationlog: AutomationlogService) {}
   @Get()

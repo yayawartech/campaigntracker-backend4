@@ -7,11 +7,14 @@ import {
   Param,
   Delete,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { CategoryRpcService } from './category-rpc.service';
 import { CategoryRPCdto } from './dto/Category-RPC.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('category-rpc')
+@UseGuards(AuthGuard('jwt'))
 export class CategoryRpcController {
   constructor(private readonly categoryRPCService: CategoryRpcService) {}
   @Post()

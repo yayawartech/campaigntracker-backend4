@@ -7,11 +7,14 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { AdAccountsService } from './ad_accounts.service';
 import { AdAccountDto } from './dto/create-adaccounts.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('ad-accounts')
+@UseGuards(AuthGuard('jwt'))
 export class AdAccountsController {
   constructor(private readonly adAccountsService: AdAccountsService) {}
 

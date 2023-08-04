@@ -7,11 +7,14 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateAutomationDto } from './dto/CreateAutomation.dto';
 import { AutomationService } from './automation.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('automation')
+@UseGuards(AuthGuard('jwt'))
 export class AutomationController {
   constructor(private readonly automationService: AutomationService) {}
   @Post()
