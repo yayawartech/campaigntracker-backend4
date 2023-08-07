@@ -395,9 +395,16 @@ export class AutomationService {
                 },
                 response: {},
               };
-              if (dailyBudget != newBudget) {
+              if (
+                dailyBudget != newBudget &&
+                data.previous_value.status != data.new_value.status
+              ) {
                 if (!automation.postToDatabase) {
-                  const adSetID = row.adset_id.split(',');
+                  const adSetID = row.adset_id.includes(',')
+                    ? row.adset_id.split(',')
+                    : [row.adset_id];
+
+                  // console.log('AdsetID', adSetID);
                   if (automation.budgetType !== 'amount') {
                     await Promise.all(
                       adSetID.map(async (adSetData) => {
@@ -414,16 +421,19 @@ export class AutomationService {
                             new_budget: newBudget,
                             status: automation.actionStatus.toUpperCase(),
                           };
+
                           const postToDatabase = await this.postAdsetNewData(
                             adSetID,
                             newBudget,
                             automation.actionStatus.toUpperCase(),
                             apiResponse['status'],
                           );
-                          data.response = postToDatabase;
-                          await this.automationLogService.createAutomationLog(
-                            data,
-                          );
+                          if (postToDatabase) {
+                            data.response = postToDatabase;
+                            await this.automationLogService.createAutomationLog(
+                              data,
+                            );
+                          }
                         } catch (error) {
                           this.logger.error('Error in API Call', error);
                         }
@@ -463,6 +473,7 @@ export class AutomationService {
   }
   async getAdsetCurrentData(adsetId: any): Promise<void> {
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
+    console.log(url);
     try {
       const response: AxiosResponse = await axios.get(url);
       return response.data;
@@ -475,7 +486,7 @@ export class AutomationService {
     newBudget: number,
     status: string,
     oldStatus: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     let body = {};
     this.logger.log(status, oldStatus, newBudget);
     let newStatus = '';
@@ -494,9 +505,16 @@ export class AutomationService {
       this.logger.log(
         `Adset ${adsetId} status updated to ${JSON.stringify(body)}`,
       );
-      return response.data;
+
+      if (response.status == 200) {
+        return true;
+      } else {
+        return false;
+      }
+      // return response.data;
     } catch (error) {
       this.logger.error(error.stack);
+      return false;
     }
   }
 
