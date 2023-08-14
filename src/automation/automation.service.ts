@@ -699,6 +699,7 @@ export class AutomationService {
 
     //t1.status = 'ACTIVE'
     whereList.push(this.generateWhere('t1.status', '=', `'ACTIVE'`));
+    whereList.push(this.generateWhere('NOT t1.name','LIKE',"'%_BLOCK'"));
     return [whereList, joinList, withList];
   }
 
