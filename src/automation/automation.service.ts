@@ -476,11 +476,11 @@ export class AutomationService {
     );
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
     try {
-      // const response: AxiosResponse = await axios.post(url, body);
+      const response: AxiosResponse = await axios.post(url, body);
       this.logger.log(
         `Adset ${adsetId} status updated to ${JSON.stringify(body)}`,
       );
-      // return response.data;
+      return response.data;
     } catch (error) {
       this.logger.error(error.stack);
     }
