@@ -593,7 +593,7 @@ export class AutomationService {
 
         // generateWhere
         const operand = rule.operand;
-        const condition = `${alias}.average_rpc`;
+        const condition = `${alias}.category_rpc`;
         const value = `${alias}.${rule.parameters}`;
         whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'margin' || param === 'profit') {
@@ -707,10 +707,12 @@ export class AutomationService {
     //t1.status = 'ACTIVE'
     whereList.push(this.generateWhere('t1.status', '=', `'ACTIVE'`));
     if (blockAdset) {
-      whereList.push(this.generateWhere('NOT t1.name', 'LIKE', `'${blockAdset}'`));
+      whereList.push(this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`));
 
     }
     return [whereList, joinList, withList];
+
+
   }
 
   generateWhere(
