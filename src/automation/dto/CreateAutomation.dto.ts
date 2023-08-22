@@ -16,4 +16,5 @@ export class CreateAutomationDto {
   data: Row[];
   lastRun: string | null;
   nextRun: string | null;
+  blockAdset: string | null;
 }

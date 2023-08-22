@@ -42,7 +42,7 @@ export class TrackerCronJob {
     await this.adSetsService.fetchAdSetsDataFromApi();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_5AM) // 1AM EST
+  @Cron(CronExpression.EVERY_MINUTE) // 1AM EST
   async runAutomationThird(): Promise<void> {
     if (!this.runCron()) {
       return;
@@ -89,5 +89,32 @@ export class TrackerCronJob {
         },
       },
     });
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async cronToDeletedmReporting(): Promise<void>{
+    if(!this.runCron()){
+      return
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+
+    
+    await this.prisma.dmReporting.deleteMany({
+      where:{
+        createdAt:{
+          lt: thirtyDaysAgo,
+        }
+      }
+    })
+
+    await this.prisma.automationLog.deleteMany({
+      where:{
+        createdAt:{
+          lt: thirtyDaysAgo,
+        }
+      }
+    })
   }
 }
