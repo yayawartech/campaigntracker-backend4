@@ -92,29 +92,28 @@ export class TrackerCronJob {
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
-  async cronToDeletedmReporting(): Promise<void>{
-    if(!this.runCron()){
-      return
+  async cronToDeletedmReporting(): Promise<void> {
+    if (!this.runCron()) {
+      return;
     }
 
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    
     await this.prisma.dmReporting.deleteMany({
-      where:{
-        createdAt:{
+      where: {
+        createdAt: {
           lt: thirtyDaysAgo,
-        }
-      }
-    })
+        },
+      },
+    });
 
     await this.prisma.automationLog.deleteMany({
-      where:{
-        createdAt:{
+      where: {
+        createdAt: {
           lt: thirtyDaysAgo,
-        }
-      }
-    })
+        },
+      },
+    });
   }
 }
