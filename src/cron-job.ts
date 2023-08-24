@@ -42,7 +42,7 @@ export class TrackerCronJob {
     await this.adSetsService.fetchAdSetsDataFromApi();
   }
 
-  @Cron(CronExpression.EVERY_MINUTE) // 1AM EST
+  @Cron(CronExpression.EVERY_DAY_AT_5AM) // 1AM EST
   async runAutomationThird(): Promise<void> {
     if (!this.runCron()) {
       return;
