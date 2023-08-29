@@ -416,7 +416,7 @@ export class AutomationService {
                   await this.postAdsetNewData(
                     adSetID,
                     newBudget,
-                    automation.actionStatus.toUpperCase() === 'Pause'
+                    automation.actionStatus.toUpperCase() === 'PAUSE'
                       ? 'PAUSED'
                       : automation.actionStatus.toUpperCase(),
                     apiResponse['status'],
