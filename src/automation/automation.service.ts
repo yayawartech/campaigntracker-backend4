@@ -51,7 +51,7 @@ export class AutomationService {
     @Inject(AutomationlogService)
     private readonly automationLogService: AutomationlogService,
     private readonly logger: Logger,
-  ) { }
+  ) {}
 
   async storeAutomation(createAutomationDto: CreateAutomationDto) {
     const formattedRowsPromises = createAutomationDto.data.map((data) => {
@@ -65,7 +65,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-      parseInt(createAutomationDto.automationInMinutes),
+        parseInt(createAutomationDto.automationInMinutes),
     );
     // Retrieve the updated date and time
     const updatedDate = currentDate;
@@ -85,7 +85,7 @@ export class AutomationService {
         postToDatabase: createAutomationDto.postToDatabase,
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
-        blockAdset: createAutomationDto.blockAdset
+        blockAdset: createAutomationDto.blockAdset,
       },
     });
     return automationData;
@@ -177,7 +177,7 @@ export class AutomationService {
         automationInMinutes: automation.automationInMinutes,
         createdAt: automation.createdAt,
         updatedAt: automation.updatedAt,
-        blockAdset: automation.blockAdset
+        blockAdset: automation.blockAdset,
       };
     });
     const totalItems = await this.prisma.user.count(); // Count total number of items
@@ -214,7 +214,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-      parseInt(createAutomationDto.automationInMinutes),
+        parseInt(createAutomationDto.automationInMinutes),
     );
 
     // Retrieve the updated date and time
@@ -238,7 +238,7 @@ export class AutomationService {
         postToDatabase: createAutomationDto.postToDatabase,
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
-        blockAdset: createAutomationDto.blockAdset
+        blockAdset: createAutomationDto.blockAdset,
       },
     });
     return {
@@ -291,10 +291,15 @@ export class AutomationService {
         const rules = JSON.parse(JSON.stringify(automation.rules));
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
-        const blockAdset = automation.blockAdset
+        const blockAdset = automation.blockAdset;
 
         // For each row, generateQuery.
-        const query = await this.generateQuery(rules, adsetTable, reportView, blockAdset);
+        const query = await this.generateQuery(
+          rules,
+          adsetTable,
+          reportView,
+          blockAdset,
+        );
         this.logger.log('Query', query);
         if (query) {
           let res: QueryResponse[] = [];
@@ -411,7 +416,9 @@ export class AutomationService {
                   await this.postAdsetNewData(
                     adSetID,
                     newBudget,
-                    automation.actionStatus.toUpperCase(),
+                    automation.actionStatus.toUpperCase() === 'Pause'
+                      ? 'PAUSED'
+                      : automation.actionStatus.toUpperCase(),
                     apiResponse['status'],
                   );
                 } catch (error) {
@@ -491,12 +498,12 @@ export class AutomationService {
     rules: Rule[],
     adsetTable: string,
     reportView: string,
-    blockAdset: string
+    blockAdset: string,
   ): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
       reportView,
-      blockAdset
+      blockAdset,
     );
 
     let query = '';
@@ -537,7 +544,7 @@ export class AutomationService {
   buildQueryPartials(
     rules: Rule[],
     reportView: string,
-    blockAdset: string
+    blockAdset: string,
   ): [string[], JoinList, WithList] {
     const whereList: string[] = [];
     const joinList: JoinList = {};
@@ -707,12 +714,11 @@ export class AutomationService {
     //t1.status = 'ACTIVE'
     whereList.push(this.generateWhere('t1.status', '=', `'ACTIVE'`));
     if (blockAdset) {
-      whereList.push(this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`));
-
+      whereList.push(
+        this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`),
+      );
     }
     return [whereList, joinList, withList];
-
-
   }
 
   generateWhere(
