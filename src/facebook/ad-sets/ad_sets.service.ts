@@ -20,6 +20,7 @@ export class AdSetsService {
     private prisma: PrismaService,
   ) {}
   async fetchAdSetsDataFromApi(): Promise<any> {
+
     const adAccountData = await this.adAccountService.findAllAccounts();
 
     if (adAccountData) {
@@ -31,7 +32,7 @@ export class AdSetsService {
           accountId +
           '/adsets?fields=status,name,daily_budget,created_time,start_time,targeting&limit=400&access_token=' +
           FACEBOOK_ACCESS_TOKEN;
-
+        console.log(url);
         try {
           this.logger.log('Started cron job for Facebook AdSetsHistory API');
           const response: AxiosResponse = await axios.get(url);

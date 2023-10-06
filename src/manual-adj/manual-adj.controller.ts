@@ -19,16 +19,16 @@ export class ManualAdjController {
         @Query('day') day: string,
         @Query('facebook_campaign') facebook_campaign: string,
         @Query('term_filter') term_filter: string,
-        @Query('spend_min') spend_min: number,
-        @Query('spend_max') spend_max: number,
-        @Query('rpc_min') rpc_min: number,
-        @Query('rpc_max') rpc_max: number,
-        @Query('margin_min') margin_min: number,
-        @Query('margin_max') margin_max: number,
-        @Query('gp_min') gp_min: number,
-        @Query('gp_max') gp_max: number,
-        @Query('ctr_min') ctr_min: number,
-        @Query('ctr_max') ctr_max: number,
+        @Query('spend_min') spend_min: string,
+        @Query('spend_max') spend_max: string,
+        @Query('rpc_min') rpc_min: string,
+        @Query('rpc_max') rpc_max: string,
+        @Query('margin_min') margin_min: string,
+        @Query('margin_max') margin_max: string,
+        @Query('gp_min') gp_min: string,
+        @Query('gp_max') gp_max: string,
+        @Query('ctr_min') ctr_min: string,
+        @Query('ctr_max') ctr_max: string,
 
 
     ) {
@@ -47,9 +47,8 @@ export class ManualAdjController {
             margin_max,
             gp_min,
             gp_max,
-            ctr_max,
-            ctr_min
-
+            ctr_min,
+            ctr_max
         )
         return res
     }
