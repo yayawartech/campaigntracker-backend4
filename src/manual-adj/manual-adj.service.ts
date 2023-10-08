@@ -3,40 +3,42 @@ import { PaginationService } from 'src/pagination/pagination.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ManualAdjData } from './ManualAdjData';
 import { ManualAdjDto } from './dto/manual-adj.dto';
-import { ManualAdjustment, Prisma } from '@prisma/client';
+import { Prisma, ManualLog } from '@prisma/client';
 @Injectable()
 export class ManualAdjService {
   constructor(
+
     private prisma: PrismaService,
     private readonly logger: Logger,
-    private readonly paginationService: PaginationService<ManualAdjData>,
+    private readonly paginationService: PaginationService<ManualLog>,
+    private readonly paginationServices: PaginationService<ManualAdjData>
 
   ) { }
 
-  async storeManualData(createDto: ManualAdjDto): Promise<ManualAdjustment[]> {
-    const updateData: ManualAdjustment[] = await Promise.all(
-      createDto.data.map(async (item) => {
-        const {
-          id, new_budget, duplicate, duplicate_budget
-        } = item;
-        const existingData = await this.prisma.manualAdjustment.findUnique({
-          where: { id },
-        })
-        if (!existingData) {
-          throw Error(`Data unavilable ${id}`)
-        }
-        return this.prisma.manualAdjustment.update({
-          where: { id },
-          data: {
-            new_budget: Number(new_budget),
-            duplicate: Number(duplicate),
-            duplicate_budget: Number(duplicate_budget)
-          }
-        })
-      })
+  async storeManualData(data: ManualAdjDto[]): Promise<void> {
+    const responseData = data.map(async (items) => {
+      await this.logToDatabase((items.adset_id), `Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`, Number(items.new_budget))
+      console.log(`Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`)
+      if (Number(items.duplicate) === 0) {
+        console.log(`${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`)
+        await this.logToDatabase((items.adset_id), `${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`, Number(items.current_budget))
+      }
+      if (Number(items.duplicate !== 0)) {
+        console.log(`${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`)
+        await this.logToDatabase((items.adset_id), `${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`, Number(items.duplicate_budget))
+      }
+    })
 
-    )
-    return updateData
+  }
+  async logToDatabase(adsetId: string, action: string, newBudget: number): Promise<void> {
+    await this.prisma.manualLog.create({
+      data: {
+        adset_id: adsetId,
+        action: action,
+        new_budget: newBudget,
+        created_time: new Date(),
+      },
+    });
   }
 
   async getAllAutomations(
@@ -82,9 +84,9 @@ export class ManualAdjService {
       ctr_max: ctr_max
     }
     let whereQuery = this.generateWhereQuery(whereData)
-    
+
     let havingQuery = this.generateHavingQuery(havingData)
-  
+
     let orderByColumn = 'gp'
     let orderByDirection = 'asc';
 
@@ -129,14 +131,14 @@ export class ManualAdjService {
       ${havingQuery}
     ORDER BY ${orderByColumn} ${orderByDirection}
     LIMIT ${skip}, ${take};`
-    
+
     const query = Prisma.raw(queryStr);
 
 
-    console.log("Query to be executed", queryStr)
+    // console.log("Query to be executed", queryStr)
 
     const dataFromquery: any = await this.prisma.$queryRaw(query)
-    
+
     const mappedData: ManualAdjData[] = dataFromquery.map((row) => ({
       gp: row.gp,
       RPC: row.RPC,
@@ -153,7 +155,7 @@ export class ManualAdjService {
     const totalItems = mappedData.length
 
     const currentPageData = mappedData.slice(skip, skip + pageSize);
-    const paginationResponse = await this.paginationService.getPaginationData(
+    const paginationResponse = await this.paginationServices.getPaginationData(
       page,
       pageSize,
       currentPageData,
@@ -181,7 +183,7 @@ export class ManualAdjService {
     if (havingData.gp_min !== '' && havingData.gp_max !== '') {
       havingConditions.push(`t1.gp BETWEEN ${havingData.gp_min} AND ${havingData.gp_max}`);
     }
-    
+
     if (havingData.ctr_min !== '' && havingData.ctr_max !== '') {
       havingConditions.push(`CTR BETWEEN ${havingData.ctr_min} AND ${havingData.ctr_max}`);
     }
@@ -202,7 +204,7 @@ export class ManualAdjService {
       const yesterdayFormatted = yesterday.toISOString().split('T')[0]
       conditions.push(`DATE(t2.created_time) = '${yesterdayFormatted}'`)
     }
-    
+
     if (whereData.facebook_campaign !== '') {
       conditions.push(`t2.name = '${whereData.facebook_campaign}'`)
     }
@@ -212,6 +214,65 @@ export class ManualAdjService {
     }
 
     return conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  }
+
+
+  async findAllManualLog(
+    page: number = 1,
+    pageSize: number = 10,
+    fromDate: string = null,
+    toDate: string = null,
+    sort: any,
+    adsetId: string,
+  ): Promise<PaginationResponse<ManualLog>> {
+    const skip = (page - 1) * pageSize;
+    const take = Number(pageSize);
+    let where: any = {};
+
+    if (fromDate !== null && toDate !== null) {
+      const fromQueryDate = new Date(fromDate)
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      const toQueryDate = new Date(toDate);
+      toQueryDate.setUTCHours(23, 59, 59);
+
+      const formattedToDate = toQueryDate
+        .toISOString()
+        .replace('T', ' ')
+        .replace('.000Z', '');
+
+      where = {
+        ...where,
+        created_time: {
+          gte: new Date(fromQueryDate),
+          lte: new Date(formattedToDate),
+        },
+      };
+    }
+    if (adsetId !== '') {
+      where = {
+        ...where,
+        adset_id: {
+          equals: adsetId,
+        },
+      };
+    }
+    const manuallogs = await this.prisma.manualLog.findMany({
+      skip,
+      take,
+      orderBy: sort ? { [sort.id]: sort.desc === 'true' ? 'desc' : 'asc' } : {},
+      where,
+    });
+    const totalItems = await this.prisma.automationLog.count(); // Count total number of items
+
+    return this.paginationService.getPaginationData(
+      page,
+      pageSize,
+      manuallogs,
+      totalItems,
+    );
   }
 
 }

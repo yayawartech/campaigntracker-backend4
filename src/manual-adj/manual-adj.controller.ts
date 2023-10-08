@@ -1,7 +1,7 @@
 import { Get, Controller, Query, Post, Body, Param } from '@nestjs/common';
 import { ManualAdjService } from './manual-adj.service';
-import { ManualAdjustment } from '@prisma/client';
 import { ManualAdjDto } from './dto/manual-adj.dto';
+import { ManualLog } from '@prisma/client';
 
 @Controller('manual-adj')
 export class ManualAdjController {
@@ -54,13 +54,29 @@ export class ManualAdjController {
     }
     @Post()
     async postManualAdj(
-        @Body() manualadjData: ManualAdjDto
+        @Body() manualadjData: ManualAdjDto[]
     ) {
         return this.manualAdj.storeManualData(manualadjData)
     }
 
-    @Get('test')
-    async fetchedDataFromDb() {
-        return this.fetchedDataFromDb()
+    @Get('manual-log')
+    async getAutomationLog(
+        @Query('page') page: number,
+        @Query('pageSize') pageSize: number,
+        @Query('fromDate') fromDate: string,
+        @Query('toDate') toDate: string,
+        @Query('sort') sort: any,
+        @Query('adsetId') adsetId: string,
+    ): Promise<PaginationResponse<ManualLog>> {
+        const res = await this.manualAdj.findAllManualLog(
+            page,
+            pageSize,
+            fromDate,
+            toDate,
+            sort,
+            adsetId,
+        );
+        return res;
     }
 }
+

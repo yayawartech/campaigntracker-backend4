@@ -169,20 +169,12 @@ model CategoryRPC{
   country String?
   RPC Float?
 }
-model ManualAdjustment{
-  id Int @id @default(autoincrement())
-  adset_age Int
-  last_budget_adjustment Int
-  cpa Float?
-  rpc Float?
-  spend Float?
-  revenue Float?
-  gp Float?
-  margin Float?
-  ctr Float?
-  ad_clicks Int
-  current_budget Float?
-  new_budget Float?
-  duplicate Int?
-  duplicate_budget Float?
+
+
+model ManualLog {
+  id        Int      @id @default(autoincrement())
+  adset_id  String
+  action    String
+  new_budget Float
+  created_time DateTime
 }
