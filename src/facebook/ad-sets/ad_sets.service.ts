@@ -18,7 +18,7 @@ export class AdSetsService {
     private readonly logger: Logger,
     private readonly paginationService: PaginationService<AdSets>,
     private prisma: PrismaService,
-  ) {}
+  ) { }
   async fetchAdSetsDataFromApi(): Promise<any> {
 
     const adAccountData = await this.adAccountService.findAllAccounts();
@@ -39,12 +39,29 @@ export class AdSetsService {
           if (response) {
             const promises: AdSetsHistory[] = response.data.data.map(
               async (record) => {
+                const adsetID = record.id
+
+                const existingAdsetID = await this.prisma.budgetAdjustment.findUnique({
+                  where: {
+                    adset_id: adsetID,
+                  }
+                })
+
+                if (!existingAdsetID) {
+                  await this.prisma.budgetAdjustment.create({
+                    data: {
+                      adset_id: adsetID,
+                      last_budget_adjustment: ''
+                    }
+                  })
+                }
+
                 const startTime = new Date(record.start_time);
                 const createdTime = new Date(record.created_time);
                 const adSetDataHistory = await this.prisma.adSetsHistory.create(
                   {
                     data: {
-                      adset_id: record.id,
+                      adset_id: adsetID,
                       status: record.status,
                       name: record.name,
                       country: record.targeting.geo_locations.countries,

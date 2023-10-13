@@ -178,3 +178,8 @@ model ManualLog {
   new_budget Float
   created_time DateTime
 }
+ model BudgetAdjustment{
+  id        Int      @id @default(autoincrement())
+  adset_id String    @unique
+  last_budget_adjustment DateTime?
+ }

@@ -21,6 +21,11 @@ export class ManualAdjService {
       if (Number(items.new_budget)) {
         console.log(`Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`)
         await this.logToDatabase((items.adset_id), `Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`, Number(items.new_budget))
+        const currentTime = new Date()
+        await this.prisma.budgetAdjustment.update({
+          where: { adset_id: items.adset_id },
+          data: { last_budget_adjustment: currentTime }
+        })
 
       }
 
