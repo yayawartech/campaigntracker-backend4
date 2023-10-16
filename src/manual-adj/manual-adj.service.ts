@@ -127,11 +127,13 @@ export class ManualAdjService {
       ) * 100 AS Margin,
       SUM(t1.ad_clicks) AS AdClicks,
       t2.daily_budget AS Current_Budget,
-      t1.adset_id 
+      t1.adset_id,
+      t4.last_budget_adjustment
     FROM
       DmReporting t1
        JOIN AdSets t2 ON t1.adset_id = t2.adset_id
        JOIN CategoryRPC t3 ON t1.category = t3.category
+       JOIN BudgetAdjustment t4 ON t1.adset_id = t4.adset_id
        ${whereQuery}
     GROUP BY
       t1.gp,
