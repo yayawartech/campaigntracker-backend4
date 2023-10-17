@@ -16,9 +16,13 @@ export class ManualAdjService {
   ) { }
 
   async storeManualData(data: ManualAdjDto[]): Promise<void> {
-    console.log("Data From Ui", data)
+    console.log("Data From UI", data)
     const responseData = data.map(async (items) => {
+
       if (Number(items.new_budget)) {
+        if(!items.post_to_database){
+          console.log(`API CALL: Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`)
+        }
         console.log(`Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`)
         await this.logToDatabase((items.adset_id), `Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`, Number(items.new_budget))
         const currentTime = new Date()
@@ -26,14 +30,18 @@ export class ManualAdjService {
           where: { adset_id: items.adset_id },
           data: { last_budget_adjustment: currentTime }
         })
-
       }
-
       if (Number(items.duplicate) && !Number(items.duplicate_budget)) {
+        if(!items.post_to_database){
+          console.log(`API CALL: ${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`)
+        }
         console.log(`${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`)
         await this.logToDatabase((items.adset_id), `${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`, Number(items.current_budget))
       }
       if (Number(items.duplicate) && Number(items.duplicate_budget)) {
+        if(!items.post_to_database){
+          console.log(`API CALL: ${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`)
+        }
         console.log(`${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`)
         await this.logToDatabase((items.adset_id), `${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`, Number(items.duplicate_budget))
       }

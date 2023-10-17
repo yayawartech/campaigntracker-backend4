@@ -6,6 +6,6 @@ export class ManualAdjDto {
     new_budget: number;
     duplicate: number;
     duplicate_budget: number;
-    current_budget: number
-
+    current_budget: number;
+    post_to_database: boolean;
 }
