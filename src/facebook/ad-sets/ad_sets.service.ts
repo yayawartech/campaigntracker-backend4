@@ -51,7 +51,7 @@ export class AdSetsService {
                   await this.prisma.budgetAdjustment.create({
                     data: {
                       adset_id: adsetID,
-                      last_budget_adjustment: ''
+                      last_budget_adjustment: null
                     }
                   })
                 }

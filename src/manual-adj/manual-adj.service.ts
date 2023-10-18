@@ -4,6 +4,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ManualAdjData } from './ManualAdjData';
 import { ManualAdjDto } from './dto/manual-adj.dto';
 import { Prisma, ManualLog } from '@prisma/client';
+import { FACEBOOK_ACCESS_TOKEN, FACEBOOK_API_URL } from 'src/config';
+import axios, { AxiosResponse } from 'axios';
 @Injectable()
 export class ManualAdjService {
   constructor(
@@ -20,30 +22,74 @@ export class ManualAdjService {
     const responseData = data.map(async (items) => {
 
       if (Number(items.new_budget)) {
-        if(!items.post_to_database){
-          console.log(`API CALL: Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`)
+        if (!items.post_to_database) {
+          let body = { daily_budget: items.new_budget }
+          const url = `${FACEBOOK_API_URL}${items.adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
+          try {
+            const response: AxiosResponse = await axios.post(url, body)
+            this.logger.log(
+              `Adset ${items.adset_id} status updated to ${JSON.stringify(body)}`,
+            );
+            return response.data
+          } catch (error) {
+            this.logger.error(error.stack);
+          }
+        } else {
+          await this.logToDatabase((items.adset_id), 'Budget Adjusted', items.new_budget)
         }
-        console.log(`Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`)
-        await this.logToDatabase((items.adset_id), `Adset_id: ${items.adset_id} updated to new daily_budget:${items.new_budget}`, Number(items.new_budget))
         const currentTime = new Date()
         await this.prisma.budgetAdjustment.update({
           where: { adset_id: items.adset_id },
           data: { last_budget_adjustment: currentTime }
         })
       }
-      if (Number(items.duplicate) && !Number(items.duplicate_budget)) {
-        if(!items.post_to_database){
+      if (Number(items.duplicate) && !Number(items.duplicate_budget) && !Number(items.new_budget)) {
+        if (!items.post_to_database) {
+          const url = `${FACEBOOK_API_URL}${items.adset_id}/copies?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+          for (let i = 1; i <= items.duplicate; i++) {
+            const response: AxiosResponse = await axios.post(url)
+            this.logger.log(`From ${items.adset_id} a Duplicate adsets is created ${response.data.copied_adset_id}`)
+
+          }
           console.log(`API CALL: ${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`)
+        } else {
+          // await this.logToDatabase(())
         }
         console.log(`${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`)
         await this.logToDatabase((items.adset_id), `${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.current_budget}`, Number(items.current_budget))
       }
       if (Number(items.duplicate) && Number(items.duplicate_budget)) {
-        if(!items.post_to_database){
+        if (!items.post_to_database) {
+          const url = `${FACEBOOK_API_URL}${items.adset_id}/copies?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+          let body = {
+            daily_budget: items.duplicate_budget
+          }
+          for (let i = 1; i <= items.duplicate; i++) {
+            const response: AxiosResponse = await axios.post(url, body)
+          }
           console.log(`API CALL: ${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`)
         }
         console.log(`${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`)
         await this.logToDatabase((items.adset_id), `${items.duplicate} new adsets has been created from Adset_id:${items.adset_id} with new budget as ${items.duplicate_budget}`, Number(items.duplicate_budget))
+      }
+
+      if (Number(items.new_budget) && Number(items.duplicate) && Number(items.duplicate_budget)) {
+        if (!items.post_to_database) {
+          const url = `${FACEBOOK_API_URL}${items.adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
+          let data = {
+            daily_budget: items.new_budget
+          }
+
+          const response: AxiosResponse = await axios.post(url, data)
+
+          const urlCopy = `${FACEBOOK_API_URL}${items.adset_id}/copies?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+          let body = { daily_budget: items.duplicate_budget }
+
+          for (let i = 1; i <= items.duplicate; i++) {
+            const response: AxiosResponse = await axios.post(url, body)
+          }
+        }
+
       }
     })
 
