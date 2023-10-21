@@ -8,4 +8,5 @@ export class ManualAdjDto {
     duplicate_budget: number;
     current_budget: number;
     post_to_database: boolean;
+    adset_name: string;
 }
