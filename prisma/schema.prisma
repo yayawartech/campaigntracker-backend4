@@ -134,6 +134,23 @@ view v_spendreport {
   @@id([reportDate, adset_id])
 }
 
+view manual_adjustment{
+  reportDate   DateTime @db.Date
+  adset_id     BigInt
+  revenue Float?
+  adSet_age String?
+  gp Float?
+  spend Float?
+  ad_clicks Int?
+  current_budget Float?
+  margin Float?
+  new_budget Float?
+  duplicate Int?
+  duplicate_budget Float?
+  @@id([reportDate, adset_id])
+
+}
+
 model AutomationLog{   
   id Int @id @default(autoincrement())
   automationId Int 
@@ -152,3 +169,17 @@ model CategoryRPC{
   country String?
   RPC Float?
 }
+
+
+model ManualLog {
+  id        Int      @id @default(autoincrement())
+  adset_id  String
+  action    String
+  new_budget Float
+  created_time DateTime
+}
+ model BudgetAdjustment{
+  id        Int      @id @default(autoincrement())
+  adset_id String    @unique
+  last_budget_adjustment DateTime?
+ }

@@ -18,8 +18,9 @@ export class AdSetsService {
     private readonly logger: Logger,
     private readonly paginationService: PaginationService<AdSets>,
     private prisma: PrismaService,
-  ) {}
+  ) { }
   async fetchAdSetsDataFromApi(): Promise<any> {
+
     const adAccountData = await this.adAccountService.findAllAccounts();
 
     if (adAccountData) {
@@ -31,19 +32,36 @@ export class AdSetsService {
           accountId +
           '/adsets?fields=status,name,daily_budget,created_time,start_time,targeting&limit=400&access_token=' +
           FACEBOOK_ACCESS_TOKEN;
-
+        console.log(url);
         try {
           this.logger.log('Started cron job for Facebook AdSetsHistory API');
           const response: AxiosResponse = await axios.get(url);
           if (response) {
             const promises: AdSetsHistory[] = response.data.data.map(
               async (record) => {
+                const adsetID = record.id
+
+                const existingAdsetID = await this.prisma.budgetAdjustment.findUnique({
+                  where: {
+                    adset_id: adsetID,
+                  }
+                })
+
+                if (!existingAdsetID) {
+                  await this.prisma.budgetAdjustment.create({
+                    data: {
+                      adset_id: adsetID,
+                      last_budget_adjustment: null
+                    }
+                  })
+                }
+
                 const startTime = new Date(record.start_time);
                 const createdTime = new Date(record.created_time);
                 const adSetDataHistory = await this.prisma.adSetsHistory.create(
                   {
                     data: {
-                      adset_id: record.id,
+                      adset_id: adsetID,
                       status: record.status,
                       name: record.name,
                       country: record.targeting.geo_locations.countries,

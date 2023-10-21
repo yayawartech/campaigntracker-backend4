@@ -51,7 +51,7 @@ export class AutomationService {
     @Inject(AutomationlogService)
     private readonly automationLogService: AutomationlogService,
     private readonly logger: Logger,
-  ) {}
+  ) { }
 
   async storeAutomation(createAutomationDto: CreateAutomationDto) {
     const formattedRowsPromises = createAutomationDto.data.map((data) => {
@@ -65,7 +65,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-        parseInt(createAutomationDto.automationInMinutes),
+      parseInt(createAutomationDto.automationInMinutes),
     );
     // Retrieve the updated date and time
     const updatedDate = currentDate;
@@ -214,7 +214,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-        parseInt(createAutomationDto.automationInMinutes),
+      parseInt(createAutomationDto.automationInMinutes),
     );
 
     // Retrieve the updated date and time
@@ -385,6 +385,11 @@ export class AutomationService {
                 automation.options === 'Budget Decrease'
               ) {
                 action = 'Budget Adjusted';
+                const currentTime = new Date()
+                await this.prisma.budgetAdjustment.update({
+                  where: { adset_id: row.adset_id },
+                  data: { last_budget_adjustment: currentTime }
+                })
               }
 
               data = {
