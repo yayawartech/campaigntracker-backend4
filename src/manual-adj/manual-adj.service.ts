@@ -298,12 +298,12 @@ export class ManualAdjService {
     if (whereData.day === 'today') {
       const today = new Date()
       const formattedDate = today.toISOString().split('T')[0];
-      conditions.push(`report_date = '${formattedDate}'`)
+      conditions.push(`cast(t1.start_time AS date) = '${formattedDate}'`)
     } else if (whereData.day == 'yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1)
       const yesterdayFormatted = yesterday.toISOString().split('T')[0]
-      conditions.push(`report_date = '${yesterdayFormatted}'`)
+      conditions.push(`cast(t1.start_time AS date) = '${yesterdayFormatted}'`)
     }
 
     if (whereData.facebook_campaign !== '') {
