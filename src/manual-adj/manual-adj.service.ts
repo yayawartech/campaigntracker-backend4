@@ -69,6 +69,7 @@ export class ManualAdjService {
               
               let body = {
                 name: updatedName,
+                status: 'ACTIVE'
               }
               const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
               const update_response: AxiosResponse = await axios.post(update_url,body);
@@ -106,6 +107,7 @@ export class ManualAdjService {
               let body = {
                 daily_budget: items.duplicate_budget,
                 name: updatedName,
+                status: 'ACTIVE'
               }
               const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
               const update_response: AxiosResponse = await axios.post(update_url,body);
@@ -199,6 +201,7 @@ export class ManualAdjService {
 
     let queryStr = `
     SELECT
+          cast(t1.start_time AS date) AS report_date,
           t1.gp,
           (
           SELECT RPC
@@ -232,6 +235,7 @@ export class ManualAdjService {
     LIMIT ${skip}, ${take};`
 
     const query = Prisma.raw(queryStr);
+    console.log(query);
 
     const dataFromquery: any = await this.prisma.$queryRaw(query);
 
@@ -294,12 +298,12 @@ export class ManualAdjService {
     if (whereData.day === 'today') {
       const today = new Date()
       const formattedDate = today.toISOString().split('T')[0];
-      conditions.push(`DATE(t2.created_time) = '${formattedDate}'`)
+      conditions.push(`report_date = '${formattedDate}'`)
     } else if (whereData.day == 'yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1)
       const yesterdayFormatted = yesterday.toISOString().split('T')[0]
-      conditions.push(`DATE(t2.created_time) = '${yesterdayFormatted}'`)
+      conditions.push(`report_date = '${yesterdayFormatted}'`)
     }
 
     if (whereData.facebook_campaign !== '') {
