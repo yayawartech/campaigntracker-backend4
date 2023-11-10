@@ -235,7 +235,7 @@ export class ManualAdjService {
     LIMIT ${skip}, ${take};`
 
     const query = Prisma.raw(queryStr);
-    console.log(query);
+    console.log(queryStr);
 
     const dataFromquery: any = await this.prisma.$queryRaw(query);
 
@@ -269,24 +269,79 @@ export class ManualAdjService {
 
     const havingConditions = [];
 
+    // Case: spend_min and spend_max
     if (havingData.spend_min !== '' && havingData.spend_max !== '') {
       havingConditions.push(`Spend BETWEEN ${havingData.spend_min} AND ${havingData.spend_max}`);
     }
 
+    //Case when spend_min is only present
+    if (havingData.spend_min !== '' && havingData.spend_max == '') {
+      havingConditions.push(`Spend >= ${havingData.spend_min}`);
+    }
+
+    //Case when spend_max is only present
+    if (havingData.spend_min == '' && havingData.spend_max !== '') {
+      havingConditions.push(`Spend <= ${havingData.spend_max}`);
+    }
+
+    // Case: rpc_min and rpc_max
     if (havingData.rpc_min !== '' && havingData.rpc_max !== '') {
       havingConditions.push(`t3.RPC BETWEEN ${havingData.rpc_min} AND ${havingData.rpc_max}`);
     }
 
+    //Case when rpc_min is only present
+    if (havingData.rpc_min !== '' && havingData.rpc_max == '') {
+      havingConditions.push(`t3.RPC >= ${havingData.rpc_min}`);
+    }
+
+    //Case when rpc_max is only present
+    if (havingData.rpc_min == '' && havingData.rpc_max !== '') {
+      havingConditions.push(`t3.RPC <= ${havingData.rpc_max}`);
+    }
+
+    // Case: margin_min and margin_max
     if (havingData.margin_min !== '' && havingData.margin_max !== '') {
       havingConditions.push(`Margin BETWEEN ${havingData.margin_min} AND ${havingData.margin_max}`);
     }
 
+    //Case when margin_min is only present
+    if (havingData.margin_min !== '' && havingData.margin_max == '') {
+      havingConditions.push(`Margin >= ${havingData.margin_min}}`);
+    }
+
+    //Case when margin_max is only present
+    if (havingData.margin_min == '' && havingData.margin_max !== '') {
+      havingConditions.push(`Margin <= ${havingData.margin_max}}`);
+    }
+
+    // Case: gp_min and gp_max
     if (havingData.gp_min !== '' && havingData.gp_max !== '') {
       havingConditions.push(`t1.gp BETWEEN ${havingData.gp_min} AND ${havingData.gp_max}`);
     }
 
+    //Case when gp_min is only present
+    if (havingData.gp_min !== '' && havingData.gp_max == '') {
+      havingConditions.push(`t1.gp >= ${havingData.gp_min}}`);
+    }
+
+    //Case when gp_max is only present
+    if (havingData.gp_min == '' && havingData.gp_max !== '') {
+      havingConditions.push(`t1.gp <= ${havingData.gp_max}}`);
+    }
+
+    // Case: ctr_min and ctr_max
     if (havingData.ctr_min !== '' && havingData.ctr_max !== '') {
       havingConditions.push(`CTR BETWEEN ${havingData.ctr_min} AND ${havingData.ctr_max}`);
+    }
+
+    //Case when gtr_min is only present
+    if (havingData.ctr_min !== '' && havingData.ctr_max == '') {
+      havingConditions.push(`CTR >= ${havingData.ctr_min}}`);
+    }
+
+    //Case when gtr_min is only present
+    if (havingData.ctr_min !== '' && havingData.ctr_max == '') {
+      havingConditions.push(`CTR <= ${havingData.ctr_min}}`);
     }
     return havingConditions.length > 0 ? `HAVING ${havingConditions.join(' AND ')}` : '';
 
