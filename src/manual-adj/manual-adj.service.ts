@@ -286,17 +286,17 @@ export class ManualAdjService {
 
     // Case: rpc_min and rpc_max
     if (havingData.rpc_min !== '' && havingData.rpc_max !== '') {
-      havingConditions.push(`t3.RPC BETWEEN ${havingData.rpc_min} AND ${havingData.rpc_max}`);
+      havingConditions.push(`RPC BETWEEN ${havingData.rpc_min} AND ${havingData.rpc_max}`);
     }
 
     //Case when rpc_min is only present
     if (havingData.rpc_min !== '' && havingData.rpc_max == '') {
-      havingConditions.push(`t3.RPC >= ${havingData.rpc_min}`);
+      havingConditions.push(`RPC >= ${havingData.rpc_min}`);
     }
 
     //Case when rpc_max is only present
     if (havingData.rpc_min == '' && havingData.rpc_max !== '') {
-      havingConditions.push(`t3.RPC <= ${havingData.rpc_max}`);
+      havingConditions.push(`RPC <= ${havingData.rpc_max}`);
     }
 
     // Case: margin_min and margin_max
