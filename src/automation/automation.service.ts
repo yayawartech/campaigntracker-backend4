@@ -423,7 +423,7 @@ export class AutomationService {
                     newBudget,
                     automation.actionStatus.toUpperCase() === 'PAUSE'
                       ? 'PAUSED'
-                      : automation.actionStatus.toUpperCase(),
+                      : 'ACTIVE',
                     apiResponse['status'],
                   );
                 } catch (error) {
@@ -476,22 +476,14 @@ export class AutomationService {
   ): Promise<void> {
     let body = {};
     this.logger.log(status, oldStatus, newBudget);
-    let newStatus = '';
-    if (status === oldStatus) {
-      newStatus = status;
-    } else {
-      newStatus = oldStatus;
-    }
+    let newStatus = status;
     body = { daily_budget: newBudget.toString(), status: newStatus };
     this.logger.log(
       `Adset ${adsetId} status to be updated to ${JSON.stringify(body)}`,
     );
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
     try {
-      const response: AxiosResponse = await axios.post(url, body);
-      this.logger.log(
-        `Adset ${adsetId} status updated to ${JSON.stringify(body)}`,
-      );
+      const response: AxiosResponse = await axios.post(url, JSON.stringify(body));
       return response.data;
     } catch (error) {
       this.logger.error(error.stack);
