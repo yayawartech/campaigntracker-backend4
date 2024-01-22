@@ -202,7 +202,7 @@ export class ManualAdjService {
     let queryStr = `
     SELECT
           cast(t1.start_time AS date) AS report_date,
-          t1.gp,
+          sum(t1.gp) as gp,
           (
           SELECT RPC
           FROM CategoryRPC
