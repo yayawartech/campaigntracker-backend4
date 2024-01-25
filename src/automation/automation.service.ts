@@ -15,6 +15,7 @@ interface Rule {
   type: string;
   param: string;
   daysAgo: string;
+  adset_name: string;
   operand: string;
   averageRPC: string;
   parameters: string;
@@ -51,7 +52,7 @@ export class AutomationService {
     @Inject(AutomationlogService)
     private readonly automationLogService: AutomationlogService,
     private readonly logger: Logger,
-  ) { }
+  ) {}
 
   async storeAutomation(createAutomationDto: CreateAutomationDto) {
     const formattedRowsPromises = createAutomationDto.data.map((data) => {
@@ -65,7 +66,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-      parseInt(createAutomationDto.automationInMinutes),
+        parseInt(createAutomationDto.automationInMinutes),
     );
     // Retrieve the updated date and time
     const updatedDate = currentDate;
@@ -86,8 +87,11 @@ export class AutomationService {
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
         blockAdset: createAutomationDto.blockAdset,
+        numOfDuplicateAdSet: createAutomationDto.numOfDuplicateAdSet,
+        duplicateAdSetAmount: createAutomationDto.duplicateAdSetAmount,
       },
     });
+    console.log(automationData);
     return automationData;
   }
 
@@ -146,12 +150,15 @@ export class AutomationService {
     if ('daysOfTimeFrame' in data && data['daysOfTimeFrame']) {
       display_text += data.daysOfTimeFrame + ' days ago ';
     }
+    if ('adset_name' in data && data['adset_name']) {
+      display_text += data.adset_name + ' ';
+    }
     return { ...data, displayText: display_text };
   }
 
   async getAllAutomations(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
   ): Promise<PaginationResponse<Automation>> {
     const skip = (page - 1) * pageSize;
     const take = Number(pageSize);
@@ -178,6 +185,8 @@ export class AutomationService {
         createdAt: automation.createdAt,
         updatedAt: automation.updatedAt,
         blockAdset: automation.blockAdset,
+        duplicateAdSetAmount: automation.duplicateAdSetAmount,
+        numOfDuplicateAdSet: automation.numOfDuplicateAdSet,
       };
     });
     const totalItems = await this.prisma.user.count(); // Count total number of items
@@ -214,7 +223,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-      parseInt(createAutomationDto.automationInMinutes),
+        parseInt(createAutomationDto.automationInMinutes),
     );
 
     // Retrieve the updated date and time
@@ -239,6 +248,8 @@ export class AutomationService {
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
         blockAdset: createAutomationDto.blockAdset,
+        duplicateAdSetAmount: createAutomationDto.duplicateAdSetAmount,
+        numOfDuplicateAdSet: createAutomationDto.numOfDuplicateAdSet,
       },
     });
     return {
@@ -336,6 +347,63 @@ export class AutomationService {
                 } else {
                   newBudget = Number(automation.budgetAmount) * 100;
                 }
+                // ==========================================================
+              } else if (automation.options == 'Duplicate Ads Set') {
+                const duplicateAdSetCount = automation.numOfDuplicateAdSet;
+
+                for (i = 0; i < Number(duplicateAdSetCount); i++) {
+                  // 1.1 Generate Name
+                  const adsetNewNames = await this.generateAdSetNames(
+                    automation.name,
+                    automation.numOfDuplicateAdSet,
+                  );
+                  // 1.2 Make a copy using copies endpoint
+                  try {
+                    const url = `${FACEBOOK_API_URL}${row.adset_id}/copies?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+
+                    // 1.3 Store the returning adset_id of the copy
+                    const response: AxiosResponse = await axios.post(url);
+                    const copied_adset_id = response.data.copied_adset_id;
+                    // new_adset_ids.push(copied_adset_id);
+                    this.logger.log(
+                      `From ${row.adset_id} a Duplicate adset ${copied_adset_id} is created.`,
+                    );
+
+                    // 1.4 Update the name of the new adset_id
+                    let body = {
+                      name: adsetNewNames[i],
+                      status: 'ACTIVE',
+                    };
+                    const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+                    const update_response: AxiosResponse = await axios.post(
+                      update_url,
+                      body,
+                    );
+                  } catch (error) {
+                    var status = 'FAIL';
+                    var remarks = error.message;
+                    this.logger.error(error.stack);
+                  }
+
+                  // 1.5 Update the entry in automation log
+                  // adsetId: string,
+                  // action: string,
+                  // newBudget: number,
+                  // status: string,
+                  // remarks: string,
+
+                  // await this.logToDatabase(
+                  //   row.adset_id,
+                  //   `${items.duplicate} new adsets has been created from Adset_id:${
+                  //     items.adset_id
+                  //   } with new budget as ${
+                  //     items.duplicate_budget
+                  //   }  as: \n ${new_adset_ids.join('\n')}`,
+                  //   Number(items.duplicate_budget),
+                  //   status,
+                  //   remarks,
+                  // );
+                }
               } else {
                 if (automation.budgetType == 'percentage') {
                   //newBudget = current - current*budgetPercent
@@ -366,9 +434,13 @@ export class AutomationService {
                   ' %' +
                   ' New Budget => ' +
                   newBudget;
-              } else if (automation.budgetType === 'amount') {
-                actionDisplayText =
-                  automation.options +
+                } else if (automation.options == 'Duplicate Ads Set') {
+                  actionDisplayText = automation.options +
+                  '=> ' +
+                  automation.duplicateAdSetAmount 
+                }
+                } else if (automation.budgetType === 'amount') {
+                  actionDisplayText = automation.options +
                   ' =>  ' +
                   automation.budgetAmount +
                   ' %' +
@@ -385,11 +457,11 @@ export class AutomationService {
                 automation.options === 'Budget Decrease'
               ) {
                 action = 'Budget Adjusted';
-                const currentTime = new Date()
+                const currentTime = new Date();
                 await this.prisma.budgetAdjustment.update({
                   where: { adset_id: row.adset_id },
-                  data: { last_budget_adjustment: currentTime }
-                })
+                  data: { last_budget_adjustment: currentTime },
+                });
               }
 
               data = {
@@ -423,7 +495,7 @@ export class AutomationService {
                     newBudget,
                     automation.actionStatus.toUpperCase() === 'PAUSE'
                       ? 'PAUSED'
-                      : 'ACTIVE',
+                      : automation.actionStatus.toUpperCase(),
                     apiResponse['status'],
                   );
                 } catch (error) {
@@ -459,6 +531,7 @@ export class AutomationService {
       this.logger.error(error);
     }
   }
+  // ======================================================
   async getAdsetCurrentData(adsetId: any): Promise<void> {
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
     try {
@@ -468,6 +541,7 @@ export class AutomationService {
       this.logger.error('Error');
     }
   }
+  // ======================================================
   async postAdsetNewData(
     adsetId: any,
     newBudget: number,
@@ -476,14 +550,22 @@ export class AutomationService {
   ): Promise<void> {
     let body = {};
     this.logger.log(status, oldStatus, newBudget);
-    let newStatus = status;
+    let newStatus = '';
+    if (status === oldStatus) {
+      newStatus = status;
+    } else {
+      newStatus = oldStatus;
+    }
     body = { daily_budget: newBudget.toString(), status: newStatus };
     this.logger.log(
       `Adset ${adsetId} status to be updated to ${JSON.stringify(body)}`,
     );
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
     try {
-      const response: AxiosResponse = await axios.post(url, JSON.stringify(body));
+      const response: AxiosResponse = await axios.post(url, body);
+      this.logger.log(
+        `Adset ${adsetId} status updated to ${JSON.stringify(body)}`,
+      );
       return response.data;
     } catch (error) {
       this.logger.error(error.stack);
@@ -560,6 +642,15 @@ export class AutomationService {
         const value = rule.daysCompareTo;
         const condition = '(TO_DAYS(NOW()) - TO_DAYS(t1.start_time))';
         whereList.push(this.generateWhere(condition, operand, value));
+        // ------------------->>>>>>>>>>>>>>>>><<<<<<<<<<<<<<---------------------
+      } else if (param === 'adset_name') {
+        // generateWhere
+        let operand = rule.operand;
+        const condition = `t1.adset_name`;
+        operand === 'Contains' ? (operand = 'LIKE') : (operand = 'NOT LIKE');
+        const value = `%${rule.adset_name}%`;
+        whereList.push(this.generateWhere(condition, operand, value));
+        // ------------------->>>>>>>>>>>>>>>>><<<<<<<<<<<<<<---------------------
       } else if (param === 'ad_clicks') {
         // generateWith
         const [alias, withQuery] = this.generateWith(param, reportView);
@@ -714,7 +805,9 @@ export class AutomationService {
       whereList.push(
         this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`),
       );
-    }
+    } //else if (param === 'adset_name') {
+    //   whereList.push(this.generateWhere('t1.name', 'LIKE', `'%${blockAdset}'`));
+    // }
     return [whereList, joinList, withList];
   }
 
@@ -758,5 +851,40 @@ export class AutomationService {
   generateJoin(alias: string): string {
     const joinQuery = `\tJOIN ${alias} ON t1.adset_id = ${alias}.adset_id\n`;
     return joinQuery;
+  }
+  async logToDatabase(
+    adsetId: string,
+    action: string,
+    newBudget: number,
+    status: string,
+    remarks: string,
+  ): Promise<void> {
+    await this.prisma.manualLog.create({
+      data: {
+        adset_id: adsetId,
+        action: action,
+        new_budget: newBudget,
+        created_time: new Date(),
+        status: status,
+        remarks: remarks,
+      },
+    });
+  }
+
+  async generateAdSetNames(name: string, duplicationCount: string) {
+    const currentDate = new Date();
+    const formattedDate = currentDate
+      .toISOString()
+      .slice(2, 10)
+      .replace(/-/g, '');
+    const baseName = `${name}-${formattedDate}`;
+
+    const adSetNames = [];
+    for (let i = 0; i < Number(duplicationCount); i++) {
+      const letter = String.fromCharCode(65 + i);
+      const adSetName = `${baseName}XXDupe${formattedDate}${letter}`;
+      adSetNames.push(adSetName);
+    }
+    return adSetNames;
   }
 }
