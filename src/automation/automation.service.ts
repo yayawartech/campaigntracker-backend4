@@ -65,7 +65,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-      parseInt(createAutomationDto.automationInMinutes),
+        parseInt(createAutomationDto.automationInMinutes),
     );
     // Retrieve the updated date and time
     const updatedDate = currentDate;
@@ -214,7 +214,7 @@ export class AutomationService {
     // Add 10 minutes to the current date
     currentDate.setMinutes(
       currentDate.getMinutes() +
-      parseInt(createAutomationDto.automationInMinutes),
+        parseInt(createAutomationDto.automationInMinutes),
     );
 
     // Retrieve the updated date and time
@@ -292,6 +292,7 @@ export class AutomationService {
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         const blockAdset = automation.blockAdset;
+        const automationId = automation.id;
 
         // For each row, generateQuery.
         const query = await this.generateQuery(
@@ -299,6 +300,7 @@ export class AutomationService {
           adsetTable,
           reportView,
           blockAdset,
+          automationId,
         );
         this.logger.log('Query', query);
         if (query) {
@@ -385,11 +387,11 @@ export class AutomationService {
                 automation.options === 'Budget Decrease'
               ) {
                 action = 'Budget Adjusted';
-                const currentTime = new Date()
+                const currentTime = new Date();
                 await this.prisma.budgetAdjustment.update({
                   where: { adset_id: row.adset_id },
-                  data: { last_budget_adjustment: currentTime }
-                })
+                  data: { last_budget_adjustment: currentTime },
+                });
               }
 
               data = {
@@ -459,6 +461,11 @@ export class AutomationService {
       this.logger.error(error);
     }
   }
+  // 1.1 Generate Name
+  // 1.2 Make a copy using copies endpoint
+  // 1.3 Store the returning adset_id of the copy
+  // 1.4 Update the name of the new adset_id
+  // 1.5 Update the entry in automation log
   async getAdsetCurrentData(adsetId: any): Promise<void> {
     const url = `${FACEBOOK_API_URL}${adsetId}?access_token=${FACEBOOK_ACCESS_TOKEN}&fields=id,name,status,daily_budget`;
     try {
@@ -496,11 +503,13 @@ export class AutomationService {
     adsetTable: string,
     reportView: string,
     blockAdset: string,
+    automationId: number,
   ): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
       reportView,
       blockAdset,
+      automationId,
     );
 
     let query = '';
@@ -517,7 +526,7 @@ export class AutomationService {
       }
     }
 
-    const select = `SELECT t1.adset_id, t1.daily_budget, t1.status FROM ${adsetTable} t1\n`;
+    const select = `SELECT t1.adset_id, t1.daily_budget FROM ${adsetTable} t1\n`;
     query += select;
 
     const joinEntries = Object.values(joinList);
@@ -542,6 +551,7 @@ export class AutomationService {
     rules: Rule[],
     reportView: string,
     blockAdset: string,
+    automationId: number,
   ): [string[], JoinList, WithList] {
     const whereList: string[] = [];
     const joinList: JoinList = {};
@@ -708,8 +718,9 @@ export class AutomationService {
       }
     }
 
-    //t1.status = 'ACTIVE'
-    whereList.push(this.generateWhere('t1.status', '=', `'ACTIVE'`));
+    //automation status = 'ACTIVE'
+    const condition = `(SELECT status from Automation where id = ${automationId})`;
+    whereList.push(this.generateWhere(condition, '=', `'ACTIVE'`));
     if (blockAdset) {
       whereList.push(
         this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`),
@@ -759,4 +770,4 @@ export class AutomationService {
     const joinQuery = `\tJOIN ${alias} ON t1.adset_id = ${alias}.adset_id\n`;
     return joinQuery;
   }
-}
+  }
