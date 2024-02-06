@@ -326,6 +326,10 @@ export class AutomationService {
           }
 
           if (Array.isArray(res) && res.length > 0) {
+
+            //1. Next Action
+            
+            //3. API call
             res.map(async (row) => {
               // Execute API Call
               const resQuery = `SELECT daily_budget FROM ${reportView} WHERE adset_id = '${row.adset_id}' LIMIT 1`;
@@ -422,6 +426,8 @@ export class AutomationService {
                   newBudget = Number(automation.budgetAmount) * 100;
                 }
               }
+
+              //2. Post to database
               let data;
               this.logger.log('Execute API CAll, Post into database..');
               let actionDisplayText = '';
@@ -465,7 +471,7 @@ export class AutomationService {
                   where: { adset_id: row.adset_id },
                   data: { last_budget_adjustment: currentTime },
                 });
-              }
+              } 
 
               data = {
                 automationId: automation.id,
@@ -483,7 +489,15 @@ export class AutomationService {
                   status: automation.actionStatus.toUpperCase(),
                 },
               };
+              
+              // API Calls to Facebook
 
+                // handle duplicate adset handleDuplicateAdset(num,amount)
+                    // create a copy
+                    // generate name
+                    // post to facebook
+                
+                //postToFacebook(adset_id,data)
               if (!automation.postToDatabase) {
                 const adSetData = row.adset_id;
                 const adSetID = row.adset_id;
