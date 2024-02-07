@@ -893,11 +893,11 @@ export class AutomationService {
       .slice(8, 10)
       .concat(currentDate.toISOString().slice(5, 7))
       .concat(currentDate.toISOString().slice(2, 4));
-
+    
     let adSetName = "";
       const letter = String.fromCharCode(65 + increment);
       adSetName = `${name}XXDupe${formattedDate}${letter}`;
-  
+      this.logger.log(`Adset Name generated: ${adSetName}`);
     return adSetName;
   }
 }
