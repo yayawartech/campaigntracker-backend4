@@ -17,4 +17,6 @@ export class CreateAutomationDto {
   lastRun: string | null;
   nextRun: string | null;
   blockAdset: string | null;
+  numOfDuplicateAdSet: string | null;
+  duplicateAdSetAmount: string | null;
 }
