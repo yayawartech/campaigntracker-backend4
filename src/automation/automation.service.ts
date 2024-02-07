@@ -354,63 +354,6 @@ export class AutomationService {
                 } else {
                   newBudget = Number(automation.budgetAmount) * 100;
                 }
-                // ==========================================================
-              } else if (automation.options == 'Duplicate Ads Set') {
-                const duplicateAdSetCount = automation.numOfDuplicateAdSet;
-
-                for (i = 0; i < Number(duplicateAdSetCount); i++) {
-                  // 1.1 Generate Name
-                  const adsetNewNames = await this.generateAdSetNames(
-                    automation.name,
-                    automation.numOfDuplicateAdSet,
-                  );
-                  // 1.2 Make a copy using copies endpoint
-                  try {
-                    const url = `${FACEBOOK_API_URL}${row.adset_id}/copies?access_token=${FACEBOOK_ACCESS_TOKEN}`;
-
-                    // 1.3 Store the returning adset_id of the copy
-                    const response: AxiosResponse = await axios.post(url);
-                    const copied_adset_id = response.data.copied_adset_id;
-                    // new_adset_ids.push(copied_adset_id);
-                    this.logger.log(
-                      `From ${row.adset_id} a Duplicate adset ${copied_adset_id} is created.`,
-                    );
-
-                    // 1.4 Update the name of the new adset_id
-                    let body = {
-                      name: adsetNewNames[i],
-                      status: 'ACTIVE',
-                    };
-                    const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
-                    const update_response: AxiosResponse = await axios.post(
-                      update_url,
-                      body,
-                    );
-                  } catch (error) {
-                    var status = 'FAIL';
-                    var remarks = error.message;
-                    this.logger.error(error.stack);
-                  }
-
-                  // 1.5 Update the entry in automation log
-                  // adsetId: string,
-                  // action: string,
-                  // newBudget: number,
-                  // status: string,
-                  // remarks: string,
-
-                  // await this.logToDatabase(
-                  //   row.adset_id,
-                  //   `${items.duplicate} new adsets has been created from Adset_id:${
-                  //     items.adset_id
-                  //   } with new budget as ${
-                  //     items.duplicate_budget
-                  //   }  as: \n ${new_adset_ids.join('\n')}`,
-                  //   Number(items.duplicate_budget),
-                  //   status,
-                  //   remarks,
-                  // );
-                }
               } else {
                 if (automation.budgetType == 'percentage') {
                   //newBudget = current - current*budgetPercent
@@ -427,7 +370,7 @@ export class AutomationService {
                 }
               }
 
-              //2. Post to database
+              //1. Post to database Only
               let data;
               this.logger.log('Execute API CAll, Post into database..');
               let actionDisplayText = '';
@@ -443,10 +386,13 @@ export class AutomationService {
                   ' %' +
                   ' New Budget => ' +
                   newBudget;
-                } else if (automation.options == 'Duplicate Ads Set') {
-                  actionDisplayText = automation.options +
-                  '=> ' +
-                  automation.duplicateAdSetAmount 
+                } else if (automation.options == 'DuplicateAdsSet') {
+                  actionDisplayText = automation.options + 
+                  ':' +
+                  'Duplicate AdSets =>  ' + 
+                  automation.numOfDuplicateAdSet + 
+                  '\n with AdSet Budget =>' + 
+                  automation.duplicateAdSetAmount;
                 }
                 else if (automation.budgetType === 'amount') {
                   actionDisplayText = automation.options +
@@ -491,32 +437,31 @@ export class AutomationService {
               };
               
               // API Calls to Facebook
-
-                // handle duplicate adset handleDuplicateAdset(num,amount)
-                    // create a copy
-                    // generate name
-                    // post to facebook
-                
-                //postToFacebook(adset_id,data)
               if (!automation.postToDatabase) {
                 const adSetData = row.adset_id;
                 const adSetID = row.adset_id;
-                try {
-                  const apiResponse = await this.getAdsetCurrentData(adSetData);
-                  data.previous_value.budget = apiResponse['daily_budget'];
-                  data.previous_value.status = apiResponse['status'];
-                  await this.automationLogService.createAutomationLog(data);
 
-                  await this.postAdsetNewData(
-                    adSetID,
-                    newBudget,
-                    automation.actionStatus.toUpperCase() === 'PAUSE'
-                      ? 'PAUSED'
-                      : automation.actionStatus.toUpperCase(),
-                    apiResponse['status'],
-                  );
-                } catch (error) {
-                  this.logger.error('Error in API Call');
+                if (automation.options == 'DuplicateAdsSet' && automation.numOfDuplicateAdSet && automation.duplicateAdSetAmount) {
+                    await this.handleDupicateAdSets(adSetID,automation.numOfDuplicateAdSet,automation.duplicateAdSetAmount);
+                }
+                else {
+                  try {
+                    const apiResponse = await this.getAdsetCurrentData(adSetData);
+                    data.previous_value.budget = apiResponse['daily_budget'];
+                    data.previous_value.status = apiResponse['status'];
+                    await this.automationLogService.createAutomationLog(data);
+  
+                    await this.postAdsetNewData(
+                      adSetID,
+                      newBudget,
+                      automation.actionStatus.toUpperCase() === 'PAUSE'
+                        ? 'PAUSED'
+                        : automation.actionStatus.toUpperCase(),
+                      apiResponse['status'],
+                    );
+                  } catch (error) {
+                    this.logger.error('Error in API Call');
+                  }
                 }
               } else {
                 await this.automationLogService.createAutomationLog(data);
@@ -548,6 +493,52 @@ export class AutomationService {
       this.logger.error(error);
     }
   }
+
+  async handleDupicateAdSets(adsetId: String, duplicateCount: String, duplicateAmount: String) : Promise<boolean> {
+    let status = false;
+    const duplicateAdSetCount = Number(duplicateCount);
+
+    const apiResponse = await this.getAdsetCurrentData(adsetId);
+    const adsetName = apiResponse['name'];
+
+    for (var i = 0; i < Number(duplicateAdSetCount); i++) {
+      // 1.1 Generate Name
+      const newAdsetName = await this.generateAdSetNames(
+        adsetName,
+        i
+      );
+      // 1.2 Make a copy using copies endpoint
+      try {
+        const url = `${FACEBOOK_API_URL}${adsetId}/copies?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+        this.logger.warn(`URL: ${url}`)
+        // 1.3 Store the returning adset_id of the copy
+        const response: AxiosResponse = await axios.post(url);
+        const copied_adset_id = response.data.copied_adset_id;
+        // new_adset_ids.push(copied_adset_id);
+        this.logger.log(
+          `From ${adsetId} a Duplicate adset ${copied_adset_id} is created.`,
+        );
+
+        // 1.4 Update the name of the new adset_id
+        let body = {
+          name: newAdsetName,
+          daily_budget: Number(duplicateAmount),
+          status: 'PAUSED',
+        };
+        const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+        const update_response: AxiosResponse = await axios.post(
+          update_url,
+          body,
+        );
+        status = true;
+      } catch (error) {
+        var remarks = error.message;
+        this.logger.error(error.message);
+        this.logger.error(error.stack);
+      }  
+  }
+  return status;
+}
   // 1.1 Generate Name
   // 1.2 Make a copy using copies endpoint
   // 1.3 Store the returning adset_id of the copy
@@ -823,9 +814,8 @@ export class AutomationService {
       }
     }
 
-    //automation status = 'ACTIVE'
-    const condition = `(SELECT status from Automation where id = ${automationId})`;
-    whereList.push(this.generateWhere(condition, '=', `'ACTIVE'`));
+    //t1.status = 'ACTIVE'
+    whereList.push(this.generateWhere('t1.status', '=', `'ACTIVE'`));
     if (blockAdset) {
       whereList.push(
         this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`),
@@ -896,20 +886,18 @@ export class AutomationService {
     });
   }
 
-  async generateAdSetNames(name: string, duplicationCount: string) {
+  async generateAdSetNames(name: String, increment: number) {
     const currentDate = new Date();
     const formattedDate = currentDate
       .toISOString()
-      .slice(2, 10)
-      .replace(/-/g, '');
-    const baseName = `${name}-${formattedDate}`;
+      .slice(8, 10)
+      .concat(currentDate.toISOString().slice(5, 7))
+      .concat(currentDate.toISOString().slice(2, 4));
 
-    const adSetNames = [];
-    for (let i = 0; i < Number(duplicationCount); i++) {
-      const letter = String.fromCharCode(65 + i);
-      const adSetName = `${baseName}XXDupe${formattedDate}${letter}`;
-      adSetNames.push(adSetName);
-    }
-    return adSetNames;
+    let adSetName = "";
+      const letter = String.fromCharCode(65 + increment);
+      adSetName = `${name}XXDupe${formattedDate}${letter}`;
+  
+    return adSetName;
   }
 }
