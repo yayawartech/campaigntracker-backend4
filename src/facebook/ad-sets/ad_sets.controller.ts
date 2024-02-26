@@ -15,6 +15,7 @@ export class AdSetsController {
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
     @Query('sort') sort: any,
+    @Query('adsetAccount') adsetAccount: any,
   ): Promise<PaginationResponse<AdSets>> {
     const resp = await this.adSetsService.getAdSetsData(
       page,
@@ -22,6 +23,7 @@ export class AdSetsController {
       fromDate,
       toDate,
       sort,
+      adsetAccount,
     );
     return resp;
   }

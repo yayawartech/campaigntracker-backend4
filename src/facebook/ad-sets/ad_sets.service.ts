@@ -100,6 +100,7 @@ export class AdSetsService {
     fromDate: string = null,
     toDate: string = null,
     sort?: any,
+    adsetAccount?: any
   ): Promise<PaginationResponse<AdSets>> {
     const skip = (page - 1) * pageSize;
     const take: number = +pageSize;
@@ -127,6 +128,14 @@ export class AdSetsService {
           lte: new Date(formattedToDate),
         },
       };
+
+      // Add the adsetAccount filter to the where condition
+    if (adsetAccount) {
+      where = {
+        ...where,
+        adaccount_id: adsetAccount,
+      };
+    }
     }
 
     const adSets = await this.prisma.adSets.findMany({
