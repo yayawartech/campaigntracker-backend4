@@ -73,7 +73,7 @@ model DmReportingHistory {
   adset_id    String?
   market      String?
   category    String?
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 }
 
 model DmReporting {
@@ -96,30 +96,33 @@ model DmReporting {
   adset_id    String?
   market      String?
   category    String?
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
   @@unique([start_time, adset_id])
 }
 
 model Automation {
-  id        Int      @id @default(autoincrement())
-  rules     Json?
-  name      String?
-  automationInMinutes String?
-  options   String?
-  budgetType String?
-  actionStatus String?
-  budgetPercent String?
-  budgetAmount String?
-  lastRun DateTime?
-  nextRun DateTime?
-  displayText String? @db.Text
-  postToDatabase  Boolean  @default(true)
-  status  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  blockAdset String?
+  id                   Int       @id @default(autoincrement())
+  rules                Json?
+  name                 String?
+  automationInMinutes  String?
+  options              String?
+  budgetType           String?
+  actionStatus         String?
+  budgetPercent        String?
+  budgetAmount         String?
+  lastRun              DateTime?
+  nextRun              DateTime?
+  displayText          String?   @db.Text
+  postToDatabase       Boolean   @default(true)
+  status               String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  blockAdset           String?
+  includeAdset         String?
   duplicateAdSetAmount String?
   numOfDuplicateAdSet  String?
+  duplicateAdSetName   String?
 }
 
 view v_spendreport {
@@ -129,43 +132,45 @@ view v_spendreport {
   revenue      Float?
   profit       Float?
   margin       Float?
-  clicks       Decimal?  @db.Decimal(32, 0)
+  clicks       Decimal? @db.Decimal(32, 0)
   daily_budget Int?
   daysPassed   Int?
 
   @@id([reportDate, adset_id])
 }
 
-model AutomationLog{   
-  id Int @id @default(autoincrement())
-  automationId Int 
-  rules String? @db.Text
-  action String? @db.Text
-  adset_id String?
+model AutomationLog {
+  id                Int      @id @default(autoincrement())
+  automationId      Int
+  rules             String?  @db.Text
+  action            String?  @db.Text
+  adset_id          String?
   actionDisplayText String?
-  query String? @db.Text
-  previous_value Json?
-  new_value Json?
-  createdAt DateTime @default(now())
+  query             String?  @db.Text
+  previous_value    Json?
+  new_value         Json?
+  createdAt         DateTime @default(now())
 }
-model CategoryRPC{
-  id Int @id @default(autoincrement())
+
+model CategoryRPC {
+  id       Int     @id @default(autoincrement())
   category String?
-  country String?
-  RPC Float?
+  country  String?
+  RPC      Float?
 }
 
 model ManualLog {
-  id        Int      @id @default(autoincrement())
-  adset_id  String
-  action    String
-  new_budget Float
-  status     String
-  remarks    String
+  id           Int      @id @default(autoincrement())
+  adset_id     String
+  action       String
+  new_budget   Float
+  status       String
+  remarks      String
   created_time DateTime
 }
- model BudgetAdjustment{
-  id        Int      @id @default(autoincrement())
-  adset_id String    @unique
+
+model BudgetAdjustment {
+  id                     Int       @id @default(autoincrement())
+  adset_id               String    @unique
   last_budget_adjustment DateTime?
- }
+}

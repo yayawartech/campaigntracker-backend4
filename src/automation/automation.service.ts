@@ -67,7 +67,7 @@ export class AutomationService {
     currentDate.setMinutes(
       currentDate.getMinutes() +
         parseInt(createAutomationDto.automationInMinutes),
-        parseInt(createAutomationDto.automationInMinutes),
+      parseInt(createAutomationDto.automationInMinutes),
     );
     // Retrieve the updated date and time
     const updatedDate = currentDate;
@@ -88,8 +88,10 @@ export class AutomationService {
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
         blockAdset: createAutomationDto.blockAdset,
+        includeAdset: createAutomationDto.includeAdset,
         numOfDuplicateAdSet: createAutomationDto.numOfDuplicateAdSet,
         duplicateAdSetAmount: createAutomationDto.duplicateAdSetAmount,
+        duplicateAdSetName: createAutomationDto.duplicateAdSetName,
       },
     });
     console.log(automationData);
@@ -186,8 +188,10 @@ export class AutomationService {
         createdAt: automation.createdAt,
         updatedAt: automation.updatedAt,
         blockAdset: automation.blockAdset,
+        includeAdset: automation.includeAdset,
         duplicateAdSetAmount: automation.duplicateAdSetAmount,
         numOfDuplicateAdSet: automation.numOfDuplicateAdSet,
+        duplicateAdSetName: automation.duplicateAdSetName,
       };
     });
     const totalItems = await this.prisma.user.count(); // Count total number of items
@@ -249,10 +253,13 @@ export class AutomationService {
         lastRun: createAutomationDto.lastRun,
         nextRun: updatedDate,
         blockAdset: createAutomationDto.blockAdset,
+        includeAdset: createAutomationDto.includeAdset,
         duplicateAdSetAmount: createAutomationDto.duplicateAdSetAmount,
+        duplicateAdSetName: createAutomationDto.duplicateAdSetName,
         numOfDuplicateAdSet: createAutomationDto.numOfDuplicateAdSet,
       },
     });
+    // this.logger.log(`\n\n------- automation for edit:: ${automation} -------\n\n`);
     return {
       message: 'Automation updated successfully',
       data: automation,
@@ -304,6 +311,7 @@ export class AutomationService {
         const adsetTable = 'AdSets';
         const reportView = 'v_spendreport';
         const blockAdset = automation.blockAdset;
+        const includeAdset = automation.includeAdset;
         const automationId = automation.id;
 
         // For each row, generateQuery.
@@ -312,6 +320,7 @@ export class AutomationService {
           adsetTable,
           reportView,
           blockAdset,
+          includeAdset,
           automationId,
         );
         this.logger.log('Query', query);
@@ -326,9 +335,8 @@ export class AutomationService {
           }
 
           if (Array.isArray(res) && res.length > 0) {
-
             //1. Next Action
-            
+
             //3. API call
             res.map(async (row) => {
               // Execute API Call
@@ -386,16 +394,17 @@ export class AutomationService {
                   ' %' +
                   ' New Budget => ' +
                   newBudget;
-                } else if (automation.options == 'DuplicateAdsSet') {
-                  actionDisplayText = automation.options + 
+              } else if (automation.options == 'DuplicateAdsSet') {
+                actionDisplayText =
+                  automation.options +
                   ':' +
-                  'Duplicate AdSets =>  ' + 
-                  automation.numOfDuplicateAdSet + 
-                  '\n with AdSet Budget =>' + 
+                  'Duplicate AdSets =>  ' +
+                  automation.numOfDuplicateAdSet +
+                  '\n with AdSet Budget =>' +
                   automation.duplicateAdSetAmount;
-                }
-                else if (automation.budgetType === 'amount') {
-                  actionDisplayText = automation.options +
+              } else if (automation.budgetType === 'amount') {
+                actionDisplayText =
+                  automation.options +
                   ' =>  ' +
                   automation.budgetAmount +
                   ' %' +
@@ -417,7 +426,7 @@ export class AutomationService {
                   where: { adset_id: row.adset_id },
                   data: { last_budget_adjustment: currentTime },
                 });
-              } 
+              }
 
               data = {
                 automationId: automation.id,
@@ -435,22 +444,31 @@ export class AutomationService {
                   status: automation.actionStatus.toUpperCase(),
                 },
               };
-              
+
               // API Calls to Facebook
               if (!automation.postToDatabase) {
                 const adSetData = row.adset_id;
                 const adSetID = row.adset_id;
 
-                if (automation.options == 'DuplicateAdsSet' && automation.numOfDuplicateAdSet && automation.duplicateAdSetAmount) {
-                    await this.handleDupicateAdSets(adSetID,automation.numOfDuplicateAdSet,automation.duplicateAdSetAmount);
-                }
-                else {
+                if (
+                  automation.options == 'DuplicateAdsSet' &&
+                  automation.numOfDuplicateAdSet &&
+                  automation.duplicateAdSetAmount
+                ) {
+                  await this.handleDupicateAdSets(
+                    adSetID,
+                    automation.numOfDuplicateAdSet,
+                    automation.duplicateAdSetAmount,
+                  );
+                } else {
                   try {
-                    const apiResponse = await this.getAdsetCurrentData(adSetData);
+                    const apiResponse = await this.getAdsetCurrentData(
+                      adSetData,
+                    );
                     data.previous_value.budget = apiResponse['daily_budget'];
                     data.previous_value.status = apiResponse['status'];
                     await this.automationLogService.createAutomationLog(data);
-  
+
                     await this.postAdsetNewData(
                       adSetID,
                       newBudget,
@@ -494,7 +512,11 @@ export class AutomationService {
     }
   }
 
-  async handleDupicateAdSets(adsetId: String, duplicateCount: String, duplicateAmount: String) : Promise<boolean> {
+  async handleDupicateAdSets(
+    adsetId: String,
+    duplicateCount: String,
+    duplicateAmount: String,
+  ): Promise<boolean> {
     let status = false;
     const duplicateAdSetCount = Number(duplicateCount);
 
@@ -503,14 +525,11 @@ export class AutomationService {
 
     for (var i = 0; i < Number(duplicateAdSetCount); i++) {
       // 1.1 Generate Name
-      const newAdsetName = await this.generateAdSetNames(
-        adsetName,
-        i
-      );
+      const newAdsetName = await this.generateAdSetNames(adsetName, i);
       // 1.2 Make a copy using copies endpoint
       try {
         const url = `${FACEBOOK_API_URL}${adsetId}/copies?access_token=${FACEBOOK_ACCESS_TOKEN}`;
-        this.logger.warn(`URL: ${url}`)
+        this.logger.warn(`URL: ${url}`);
         // 1.3 Store the returning adset_id of the copy
         const response: AxiosResponse = await axios.post(url);
         const copied_adset_id = response.data.copied_adset_id;
@@ -535,10 +554,10 @@ export class AutomationService {
         var remarks = error.message;
         this.logger.error(error.message);
         this.logger.error(error.stack);
-      }  
+      }
+    }
+    return status;
   }
-  return status;
-}
   // 1.1 Generate Name
   // 1.2 Make a copy using copies endpoint
   // 1.3 Store the returning adset_id of the copy
@@ -590,12 +609,14 @@ export class AutomationService {
     adsetTable: string,
     reportView: string,
     blockAdset: string,
+    includeAdset: string,
     automationId: number,
   ): Promise<string> {
     const [whereList, joinList, withList] = this.buildQueryPartials(
       rules,
       reportView,
       blockAdset,
+      includeAdset,
       automationId,
     );
 
@@ -638,6 +659,7 @@ export class AutomationService {
     rules: Rule[],
     reportView: string,
     blockAdset: string,
+    includeAdset: string,
     automationId: number,
   ): [string[], JoinList, WithList] {
     const whereList: string[] = [];
@@ -820,9 +842,11 @@ export class AutomationService {
       whereList.push(
         this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`),
       );
-    } //else if (param === 'adset_name') {
-    //   whereList.push(this.generateWhere('t1.name', 'LIKE', `'%${blockAdset}'`));
-    // }
+    } else if (includeAdset) {
+      whereList.push(
+        this.generateWhere('t1.name', 'LIKE', `'%${includeAdset}'`),
+      );
+    }
     return [whereList, joinList, withList];
   }
 
@@ -893,11 +917,11 @@ export class AutomationService {
       .slice(8, 10)
       .concat(currentDate.toISOString().slice(5, 7))
       .concat(currentDate.toISOString().slice(2, 4));
-    
-    let adSetName = "";
-      const letter = String.fromCharCode(65 + increment);
-      adSetName = `${name}XXDupe${formattedDate}${letter}`;
-      this.logger.log(`Adset Name generated: ${adSetName}`);
+
+    let adSetName = '';
+    const letter = String.fromCharCode(65 + increment);
+    adSetName = `${name}XXDupe${formattedDate}${letter}`;
+    this.logger.log(`Adset Name generated: ${adSetName}`);
     return adSetName;
   }
 }
