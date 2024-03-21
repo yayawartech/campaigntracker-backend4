@@ -634,7 +634,7 @@ export class AutomationService {
       }
     }
 
-    const select = `SELECT t1.adset_id, t1.daily_budget FROM ${adsetTable} t1\n`;
+    const select = `SELECT distinct(t1.adset_id), t1.daily_budget FROM ${adsetTable} t1\n`;
     query += select;
 
     const joinEntries = Object.values(joinList);
@@ -703,6 +703,9 @@ export class AutomationService {
 
         whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'average_rpc') {
+
+        const types = rule.type;
+
         // generateWith
         const [alias, withQuery] = this.generateWith(param, reportView);
         withList[alias] = withQuery;
@@ -713,7 +716,12 @@ export class AutomationService {
         // generateWhere
         const operand = rule.operand;
         const condition = `${alias}.average_rpc`;
-        const value = `${alias}.${rule.parameters}`;
+        let value = '';
+        if (types === 'parameter'){
+          value = `${alias}.${rule.parameters}`;
+        } else if (types === 'number') {
+          value = rule.dollarValue;
+        }
         whereList.push(this.generateWhere(condition, operand, value));
       } else if (param === 'category_rpc') {
         // generateWith
@@ -753,12 +761,7 @@ export class AutomationService {
           joinList[alias] = this.generateJoin(alias);
           if (types === 'number') {
             const condition = `${alias}.${param}`;
-            let value = '';
-            if (param === 'profit') {
-              value = dollarValue;
-            } else {
-              value = percentValue;
-            }
+            const value = dollarValue;
             whereList.push(this.generateWhere(condition, operand, value));
           } else {
             const condition = `${alias}.${param}`;
