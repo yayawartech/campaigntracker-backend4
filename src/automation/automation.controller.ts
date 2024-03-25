@@ -25,8 +25,9 @@ export class AutomationController {
   async getAllAutomations(
     @Query('page') page: number,
     @Query('pageSize') pageSize: number,
+    @Query('name') filterName: string,
   ) {
-    const data = await this.automationService.getAllAutomations(page, pageSize);
+    const data = await this.automationService.getAllAutomations(page, pageSize,filterName);
     return data;
   }
 

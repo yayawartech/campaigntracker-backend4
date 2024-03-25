@@ -162,12 +162,19 @@ export class AutomationService {
   async getAllAutomations(
     page = 1,
     pageSize = 10,
+    filterName = ''
   ): Promise<PaginationResponse<Automation>> {
     const skip = (page - 1) * pageSize;
     const take = Number(pageSize);
+    console.log(`FILTER: ${filterName}`);
     const automations = await this.prisma.automation.findMany({
       skip: skip,
       take: take,
+      where: {
+        name: {
+          contains: filterName
+        }
+      }
     });
     const formattedAutomations = automations.map((automation) => {
       return {
@@ -544,7 +551,6 @@ export class AutomationService {
           daily_budget: Number(duplicateAmount),
           status: 'PAUSED',
         };
-        
         const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
         this.logger.log(
           `Attempting update of new adsetid ${copied_adset_id} with body: ${JSON.stringify(body)} for URL: ${update_url} `
