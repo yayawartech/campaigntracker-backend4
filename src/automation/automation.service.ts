@@ -544,7 +544,11 @@ export class AutomationService {
           daily_budget: Number(duplicateAmount),
           status: 'PAUSED',
         };
+        
         const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+        this.logger.log(
+          `Attempting update of new adsetid ${copied_adset_id} with body: ${JSON.stringify(body)} for URL: ${update_url} `
+        )
         const update_response: AxiosResponse = await axios.post(
           update_url,
           body,
@@ -582,10 +586,10 @@ export class AutomationService {
     let body = {};
     this.logger.log(status, oldStatus, newBudget);
     let newStatus = '';
-    if (status === oldStatus) {
-      newStatus = status;
+    if (status === 'START' || status === 'ACTIVE') {
+      newStatus = 'ACTIVE';
     } else {
-      newStatus = oldStatus;
+      newStatus = 'PAUSED';
     }
     body = { daily_budget: newBudget.toString(), status: newStatus };
     this.logger.log(
@@ -843,11 +847,11 @@ export class AutomationService {
     whereList.push(this.generateWhere('t1.status', '=', `'ACTIVE'`));
     if (blockAdset) {
       whereList.push(
-        this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}'`),
+        this.generateWhere('NOT t1.name', 'LIKE', `'%${blockAdset}%'`),
       );
     } else if (includeAdset) {
       whereList.push(
-        this.generateWhere('t1.name', 'LIKE', `'%${includeAdset}'`),
+        this.generateWhere('t1.name', 'LIKE', `'%${includeAdset}%'`),
       );
     }
     return [whereList, joinList, withList];
