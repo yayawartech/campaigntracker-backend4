@@ -444,11 +444,11 @@ export class AutomationService {
                 query: query,
                 previous_value: {
                   budget: row.daily_budget.toString(),
-                  status: row.status,
+                  status: automation.status.toUpperCase(),
                 },
                 new_value: {
                   budget: newBudget,
-                  status: automation.actionStatus.toUpperCase(),
+                  status: automation.status.toUpperCase(),
                 },
               };
 
@@ -474,15 +474,19 @@ export class AutomationService {
                     );
                     data.previous_value.budget = apiResponse['daily_budget'];
                     data.previous_value.status = apiResponse['status'];
+                    
+                    let newStatus = '';
+                    if (automation.options === 'Status') {
+                      newStatus = automation.actionStatus;
+                    } else {
+                      newStatus = apiResponse['status'];
+                    }
                     await this.automationLogService.createAutomationLog(data);
-
+                    
                     await this.postAdsetNewData(
                       adSetID,
                       newBudget,
-                      automation.actionStatus.toUpperCase() === 'PAUSE'
-                        ? 'PAUSED'
-                        : automation.actionStatus.toUpperCase(),
-                      apiResponse['status'],
+                      newStatus.toUpperCase(),
                     );
                   } catch (error) {
                     this.logger.error('Error in API Call');
@@ -549,7 +553,7 @@ export class AutomationService {
         let body = {
           name: newAdsetName,
           daily_budget: Number(duplicateAmount),
-          status: 'PAUSED',
+          status: 'ACTIVE',
         };
         const update_url = `${FACEBOOK_API_URL}${copied_adset_id}?access_token=${FACEBOOK_ACCESS_TOKEN}`;
         this.logger.log(
@@ -587,10 +591,10 @@ export class AutomationService {
     adsetId: any,
     newBudget: number,
     status: string,
-    oldStatus: string,
   ): Promise<void> {
     let body = {};
-    this.logger.log(status, oldStatus, newBudget);
+    this.logger.log(status, newBudget);
+
     let newStatus = '';
     if (status === 'START' || status === 'ACTIVE') {
       newStatus = 'ACTIVE';
